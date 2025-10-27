@@ -5,7 +5,7 @@
         Zsdevweb
       </router-link>
       
-      <ul class="hidden md:flex space-x-8">
+      <ul class="hidden md:flex space-x-8 items-center">
         <li>
           <router-link to="/" class="hover:text-gray-300 transition">Accueil</router-link>
         </li>
@@ -17,6 +17,19 @@
         </li>
         <li>
           <router-link to="/contact" class="hover:text-gray-300 transition">Contact</router-link>
+        </li>
+        
+        <!-- Boutons Auth -->
+        <li v-if="!authStore.isAuthenticated">
+          <router-link to="/login" class="bg-white text-black px-4 py-2 rounded font-bold hover:bg-gray-200 transition">
+            Connexion
+          </router-link>
+        </li>
+        <li v-else class="flex items-center space-x-4">
+          <span class="text-gray-300">{{ authStore.user?.username }}</span>
+          <button @click="handleLogout" class="bg-white text-black px-4 py-2 rounded font-bold hover:bg-gray-200 transition">
+            Déconnexion
+          </button>
         </li>
       </ul>
       
@@ -43,6 +56,18 @@
         <li>
           <router-link to="/contact" @click="mobileMenuOpen = false" class="block hover:text-gray-300 transition">Contact</router-link>
         </li>
+        
+        <li v-if="!authStore.isAuthenticated" class="pt-4 border-t border-gray-800">
+          <router-link to="/login" @click="mobileMenuOpen = false" class="block bg-white text-black px-4 py-2 rounded font-bold text-center hover:bg-gray-200 transition">
+            Connexion
+          </router-link>
+        </li>
+        <li v-else class="pt-4 border-t border-gray-800 space-y-2">
+          <p class="text-gray-300">{{ authStore.user?.username }}</p>
+          <button @click="handleLogout" class="w-full bg-white text-black px-4 py-2 rounded font-bold hover:bg-gray-200 transition">
+            Déconnexion
+          </button>
+        </li>
       </ul>
     </div>
   </nav>
@@ -50,6 +75,16 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
+const router = useRouter()
+const authStore = useAuthStore()
 const mobileMenuOpen = ref(false)
+
+const handleLogout = async () => {
+  await authStore.logout()
+  mobileMenuOpen.value = false
+  router.push('/')
+}
 </script>
