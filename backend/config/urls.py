@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/quotes/', include('quotes.urls')),
+    path('api/portfolio/', include('portfolio.urls')),
 ]
 
 # Pour servir les fichiers media en développement
