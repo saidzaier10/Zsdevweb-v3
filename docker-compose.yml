@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: zsdevweb
       POSTGRES_USER: zs
-      POSTGRES_PASSWORD: zspass123
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     healthcheck:
@@ -30,7 +30,7 @@ services:
       - DEBUG=True
       - DB_NAME=zsdevweb
       - DB_USER=zs
-      - DB_PASSWORD=zspass123
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
       - DB_HOST=db
       - DB_PORT=5432
     depends_on:
