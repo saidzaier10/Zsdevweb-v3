@@ -22,21 +22,58 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        validated_data.pop('password2')
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            phone=validated_data.get('phone', ''),
-            company_name=validated_data.get('company_name', ''),
-            user_type='client'
-        )
-        user.set_password(validated_data['password'])
-        user.save()
-        return user
-
+        # Récupérer les options supplémentaires
+        supplementary_options = validated_data.pop('supplementary_options', [])
+        
+        # Initialiser total_price à 0 pour éviter les problèmes lors de la création
+        validated_data['total_price'] = 0
+        
+        # Créer le devis sans calculer le prix
+        quote = Quote.objects.create(**validated_data)
+        
+        # Ajouter les options supplémentaires (maintenant que l'objet a un ID)
+        if supplementary_options:
+            quote.supplementary_options.set(supplementary_options)
+        
+        # Maintenant calculer et sauvegarder le prix total
+        quote.total_price = quote.calculate_total_price()
+        quote.save(update_fields=['total_price'])  # Ne sauvegarde que le champ total_price
+        
+        return quote
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'phone', 'company_name', 'user_type', 'avatar']
         read_only_fields = ['id', 'user_type']
+
+class CustomTokenObtainPairSerializer(serializers.Serializer):
+    """Serializer pour la connexion avec username/password"""
+    username = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        from django.contrib.auth import authenticate
+        
+        username = attrs.get('username')
+        password = attrs.get('password')
+        
+        user = authenticate(username=username, password=password)
+        
+        if user is None:
+            raise serializers.ValidationError('Identifiants incorrects.')
+        
+        if not user.is_active:
+            raise serializers.ValidationError('Compte désactivé.')
+        
+        # Générer les tokens
+        from rest_framework_simplejwt.tokens import RefreshToken
+        refresh = RefreshToken.for_user(user)
+        
+        return {
+            'user': UserSerializer(user).data,
+            'tokens': {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }
+        }

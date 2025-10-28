@@ -13,10 +13,12 @@ export const useAuthStore = defineStore('auth', {
     async register(userData) {
       try {
         const response = await authAPI.register(userData)
+        console.log('Register response:', response.data)
         this.setTokens(response.data.tokens)
         this.user = response.data.user
         return response
       } catch (error) {
+        console.error('Register error:', error.response?.data)
         throw error
       }
     },
@@ -24,10 +26,12 @@ export const useAuthStore = defineStore('auth', {
     async login(credentials) {
       try {
         const response = await authAPI.login(credentials)
-        this.setTokens(response.data)
-        await this.fetchUser()
+        console.log('Login response:', response.data)
+        this.setTokens(response.data.tokens)
+        this.user = response.data.user
         return response
       } catch (error) {
+        console.error('Login error:', error.response?.data)
         throw error
       }
     },
@@ -38,6 +42,7 @@ export const useAuthStore = defineStore('auth', {
         this.user = response.data
       } catch (error) {
         console.error('Erreur lors de la récupération du profil:', error)
+        this.clearAuth()
       }
     },
 

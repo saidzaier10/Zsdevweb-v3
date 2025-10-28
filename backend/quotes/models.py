@@ -116,28 +116,36 @@ class Quote(models.Model):
 
     def __str__(self):
         return f"Devis #{self.id} - {self.client_name}"
-
+    
     def calculate_total_price(self):
         """Calcule le prix total du devis"""
-        # Prix de base du type de projet
-        total = self.project_type.base_price
+        total = 0
         
-        # Ajout du supplément design
-        total += self.design_option.price_supplement
+        if self.project_type:
+            total = self.project_type.base_price
         
-        # Application du multiplicateur de complexité
-        total *= self.complexity_level.price_multiplier
+        if self.design_option:
+            total += self.design_option.price_supplement
         
-        # Ajout des options supplémentaires
+        if self.complexity_level:
+            total *= self.complexity_level.price_multiplier
+        
+        # Ajouter les options supplémentaires
         for option in self.supplementary_options.all():
             total += option.price
         
         return total
-
+    
     def save(self, *args, **kwargs):
         """Calcule automatiquement le prix total avant la sauvegarde"""
-        if self.pk:  # Si l'objet existe déjà
+        # Ne calculer le prix que lors des mises à jour (pas lors de la création)
+        # et seulement si ce n'est pas explicitement mis à jour
+        if self.pk and 'update_fields' not in kwargs:
             self.total_price = self.calculate_total_price()
         super().save(*args, **kwargs)
+
+    
+    def __str__(self):
+        return f"Devis {self.id} - {self.client_name}"
 
 # Create your models here.

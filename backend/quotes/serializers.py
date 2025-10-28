@@ -53,14 +53,18 @@ class QuoteSerializer(serializers.ModelSerializer):
         # Récupérer les options supplémentaires
         supplementary_options = validated_data.pop('supplementary_options', [])
         
-        # Créer le devis
-        quote = Quote.objects.create(**validated_data)
+        # Créer le devis sans le sauvegarder encore
+        quote = Quote(**validated_data)
+        
+        # Initialiser le prix à 0 pour éviter NULL
+        quote.total_price = 0
+        quote.save()
         
         # Ajouter les options supplémentaires
         if supplementary_options:
             quote.supplementary_options.set(supplementary_options)
         
-        # Calculer et sauvegarder le prix total
+        # Recalculer et sauvegarder le prix final
         quote.total_price = quote.calculate_total_price()
         quote.save()
         

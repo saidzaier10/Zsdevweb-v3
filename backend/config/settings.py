@@ -26,7 +26,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'unsafe-default-secret-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'portfolio',
     'quotes',
     'users',
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 MIDDLEWARE = [
@@ -153,12 +154,15 @@ REST_FRAMEWORK = {
     ],
 }
 
+CORS_ALLOW_ALL_ORIGINS = True
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
+    "http://172.21.0.4:5173",  # Network IP
+    "http://172.21.0.3:8000",  # Backend network IP
 ]
 
 CORS_ALLOW_CREDENTIALS = True
