@@ -22,24 +22,17 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        # Récupérer les options supplémentaires
-        supplementary_options = validated_data.pop('supplementary_options', [])
-        
-        # Initialiser total_price à 0 pour éviter les problèmes lors de la création
-        validated_data['total_price'] = 0
-        
-        # Créer le devis sans calculer le prix
-        quote = Quote.objects.create(**validated_data)
-        
-        # Ajouter les options supplémentaires (maintenant que l'objet a un ID)
-        if supplementary_options:
-            quote.supplementary_options.set(supplementary_options)
-        
-        # Maintenant calculer et sauvegarder le prix total
-        quote.total_price = quote.calculate_total_price()
-        quote.save(update_fields=['total_price'])  # Ne sauvegarde que le champ total_price
-        
-        return quote
+        validated_data.pop('password2')
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            phone=validated_data.get('phone', ''),
+            company_name=validated_data.get('company_name', ''),
+            user_type='client'
+        )
+        user.set_password(validated_data['password'])
+        user.save()
+        return user
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

@@ -656,23 +656,37 @@ const calculateTotal = () => {
   const complexityLevel = getSelectedComplexityLevel()
   const suppOptions = getSelectedSupplementaryOptions()
   
+  console.log('=== Calcul du total ===')
+  console.log('projectType:', projectType)
+  console.log('designOption:', designOption)
+  console.log('complexityLevel:', complexityLevel)
+  console.log('suppOptions:', suppOptions)
+  
   if (projectType) {
-    total = projectType.base_price
+    total = Number(projectType.base_price) || 0
+    console.log('Après base price:', total)
   }
   
   if (designOption) {
-    total += designOption.price_supplement
+    total += Number(designOption.price_supplement) || 0
+    console.log('Après design option:', total)
   }
   
   if (complexityLevel) {
-    total *= complexityLevel.price_multiplier
+    total *= Number(complexityLevel.price_multiplier) || 1
+    console.log('Après multiplicateur:', total)
   }
   
   if (suppOptions.length > 0) {
-    total += suppOptions.reduce((sum, opt) => sum + opt.price, 0)
+    const optionsTotal = suppOptions.reduce((sum, opt) => sum + (Number(opt.price) || 0), 0)
+    total += optionsTotal
+    console.log('Après options supplémentaires:', total)
   }
   
-  return Math.round(total)
+  const finalTotal = Math.round(total)
+  console.log('Total final:', finalTotal)
+  
+  return finalTotal
 }
 
 const nextStep = () => {

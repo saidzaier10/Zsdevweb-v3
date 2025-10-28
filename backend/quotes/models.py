@@ -144,8 +144,4 @@ class Quote(models.Model):
             self.total_price = self.calculate_total_price()
         super().save(*args, **kwargs)
 
-    
-    def __str__(self):
-        return f"Devis {self.id} - {self.client_name}"
-
 # Create your models here.
