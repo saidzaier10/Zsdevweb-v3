@@ -1,306 +1,240 @@
+"""
+Serializers pour l'API Quotes Premium
+"""
 from rest_framework import serializers
-from django.core.validators import EmailValidator, MinValueValidator
-from django.core.exceptions import ValidationError
-import bleach
-import re
-from datetime import date, timedelta
+from django.utils import timezone
+from .models import (
+    Company,
+    ProjectType,
+    DesignOption,
+    ComplexityLevel,
+    SupplementaryOption,
+    QuoteTemplate,
+    Quote,
+    QuoteEmailLog
+)
 
-from .models import ProjectType, DesignOption, ComplexityLevel, SupplementaryOption, Quote
+
+class CompanySerializer(serializers.ModelSerializer):
+    """Serializer pour les informations de l'entreprise"""
+    
+    class Meta:
+        model = Company
+        fields = [
+            'id', 'name', 'logo', 'email', 'phone', 'address',
+            'siret', 'tva_number', 'primary_color', 'footer_text',
+            'email_signature', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
 
 
 class ProjectTypeSerializer(serializers.ModelSerializer):
+    """Serializer pour les types de projets"""
+    
     class Meta:
         model = ProjectType
-        fields = ['id', 'name', 'description', 'base_price', 'is_active', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
+        fields = '__all__'
 
 
 class DesignOptionSerializer(serializers.ModelSerializer):
+    """Serializer pour les options de design"""
+    
     class Meta:
         model = DesignOption
-        fields = ['id', 'name', 'description', 'price_supplement', 'is_active', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
+        fields = '__all__'
 
 
 class ComplexityLevelSerializer(serializers.ModelSerializer):
+    """Serializer pour les niveaux de complexité"""
+    
     class Meta:
         model = ComplexityLevel
-        fields = ['id', 'name', 'description', 'price_multiplier', 'is_active', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
+        fields = '__all__'
 
 
 class SupplementaryOptionSerializer(serializers.ModelSerializer):
+    """Serializer pour les options supplémentaires"""
+    
+    billing_type_display = serializers.CharField(source='get_billing_type_display', read_only=True)
+    
     class Meta:
         model = SupplementaryOption
-        fields = ['id', 'name', 'description', 'price', 'is_active', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
+        fields = '__all__'
 
 
-class QuoteSerializer(serializers.ModelSerializer):
-    project_type_details = ProjectTypeSerializer(source='project_type', read_only=True)
-    design_option_details = DesignOptionSerializer(source='design_option', read_only=True)
-    complexity_level_details = ComplexityLevelSerializer(source='complexity_level', read_only=True)
-    supplementary_options_details = SupplementaryOptionSerializer(source='supplementary_options', many=True, read_only=True)
+class QuoteTemplateSerializer(serializers.ModelSerializer):
+    """Serializer pour les templates de devis"""
+    
+    project_type_detail = ProjectTypeSerializer(source='project_type', read_only=True)
+    design_option_detail = DesignOptionSerializer(source='design_option', read_only=True)
+    complexity_level_detail = ComplexityLevelSerializer(source='complexity_level', read_only=True)
+    supplementary_options_detail = SupplementaryOptionSerializer(source='supplementary_options', many=True, read_only=True)
+    
+    class Meta:
+        model = QuoteTemplate
+        fields = [
+            'id', 'name', 'description',
+            'project_type', 'project_type_detail',
+            'design_option', 'design_option_detail',
+            'complexity_level', 'complexity_level_detail',
+            'supplementary_options', 'supplementary_options_detail',
+            'default_description', 'is_active',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class QuoteListSerializer(serializers.ModelSerializer):
+    """Serializer simplifié pour la liste des devis"""
+    
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    project_type_name = serializers.CharField(source='project_type.name', read_only=True)
+    is_expired = serializers.BooleanField(read_only=True)
     
     class Meta:
         model = Quote
         fields = [
-            'id', 'client_name', 'client_email', 'client_phone', 'company_name',
-            'project_type', 'project_type_details',
-            'design_option', 'design_option_details',
-            'complexity_level', 'complexity_level_details',
-            'supplementary_options', 'supplementary_options_details',
-            'project_description', 'deadline', 'total_price', 'status',
-            'created_at', 'updated_at'
+            'id', 'quote_number', 'client_name', 'client_email',
+            'company_name', 'project_type_name', 'status', 'status_display',
+            'total_ttc', 'is_expired', 'created_at', 'expires_at'
         ]
-        read_only_fields = ['total_price', 'created_at', 'updated_at', 'status']
-        extra_kwargs = {
-            'client_name': {
-                'required': True,
-                'min_length': 2,
-                'max_length': 200
-            },
-            'client_email': {
-                'required': True,
-                'validators': [EmailValidator(message="Adresse email invalide")]
-            },
-            'client_phone': {
-                'required': False,
-                'allow_blank': True,
-                'max_length': 20
-            },
-            'company_name': {
-                'required': False,
-                'allow_blank': True,
-                'max_length': 200
-            },
-            'project_description': {
-                'required': True,
-                'min_length': 10,
-                'max_length': 5000
-            },
-            'project_type': {'required': True},
-            'design_option': {'required': True},
-            'complexity_level': {'required': True},
-        }
+
+
+class QuoteDetailSerializer(serializers.ModelSerializer):
+    """Serializer complet pour un devis"""
     
-    def validate_client_name(self, value):
-        """Validation et nettoyage du nom client"""
-        # Nettoyer les tags HTML
-        value = bleach.clean(value, tags=[], strip=True).strip()
+    # Relations en détail
+    project_type_detail = ProjectTypeSerializer(source='project_type', read_only=True)
+    design_option_detail = DesignOptionSerializer(source='design_option', read_only=True)
+    complexity_level_detail = ComplexityLevelSerializer(source='complexity_level', read_only=True)
+    supplementary_options_detail = SupplementaryOptionSerializer(source='supplementary_options', many=True, read_only=True)
+    
+    # Champs calculés
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    discount_type_display = serializers.CharField(source='get_discount_type_display', read_only=True)
+    is_expired = serializers.BooleanField(read_only=True)
+    signature_url = serializers.CharField(read_only=True)
+    
+    class Meta:
+        model = Quote
+        fields = [
+            # Identifiants
+            'id', 'quote_number',
+            
+            # Client
+            'client_name', 'client_email', 'client_phone',
+            'company_name', 'client_address',
+            
+            # Configuration
+            'project_type', 'project_type_detail',
+            'design_option', 'design_option_detail',
+            'complexity_level', 'complexity_level_detail',
+            'supplementary_options', 'supplementary_options_detail',
+            'template',
+            
+            # Détails projet
+            'project_description', 'deadline',
+            
+            # Financier
+            'subtotal_ht', 'discount_type', 'discount_type_display',
+            'discount_value', 'discount_reason', 'discount_amount',
+            'tva_rate', 'tva_amount', 'total_ttc',
+            
+            # Paiements
+            'payment_first', 'payment_second', 'payment_final',
+            
+            # Planning
+            'estimated_duration_days', 'estimated_start_date', 'estimated_end_date',
+            
+            # PDF
+            'pdf_file',
+            
+            # Signature
+            'signature_token', 'signature_url', 'signature_image',
+            'signed_at', 'client_ip',
+            
+            # Statut
+            'status', 'status_display', 'expires_at', 'is_expired',
+            
+            # Notes internes (visible uniquement par staff)
+            'internal_notes', 'assigned_to',
+            
+            # Dates
+            'created_at', 'updated_at', 'sent_at', 'viewed_at',
+            'accepted_at', 'rejected_at'
+        ]
+        read_only_fields = [
+            'id', 'quote_number', 'subtotal_ht', 'discount_amount',
+            'tva_amount', 'total_ttc', 'payment_first', 'payment_second',
+            'payment_final', 'estimated_duration_days', 'signature_token',
+            'signature_url', 'is_expired', 'created_at', 'updated_at'
+        ]
+    
+    def to_representation(self, instance):
+        """Masquer les notes internes pour les non-staff"""
+        data = super().to_representation(instance)
+        request = self.context.get('request')
         
-        if not value:
-            raise serializers.ValidationError("Le nom du client ne peut pas être vide")
+        # Si l'utilisateur n'est pas staff, masquer les notes internes
+        if request and not (request.user and request.user.is_staff):
+            data.pop('internal_notes', None)
+            data.pop('assigned_to', None)
         
-        if len(value) < 2:
-            raise serializers.ValidationError("Le nom du client doit contenir au moins 2 caractères")
-        
-        if len(value) > 200:
-            raise serializers.ValidationError("Le nom du client ne peut pas dépasser 200 caractères")
-        
-        # Vérifier qu'il contient au moins quelques caractères alphabétiques
-        if not re.search(r'[a-zA-ZÀ-ÿ]', value):
-            raise serializers.ValidationError("Le nom du client doit contenir des lettres")
-        
-        return value
+        return data
+
+
+class QuoteCreateSerializer(serializers.ModelSerializer):
+    """Serializer pour la création de devis"""
+    
+    class Meta:
+        model = Quote
+        fields = [
+            'client_name', 'client_email', 'client_phone',
+            'company_name', 'client_address',
+            'project_type', 'design_option', 'complexity_level',
+            'supplementary_options', 'template',
+            'project_description', 'deadline',
+            'discount_type', 'discount_value', 'discount_reason',
+            'tva_rate', 'estimated_start_date'
+        ]
     
     def validate_client_email(self, value):
-        """Validation stricte de l'email"""
-        # Nettoyer et normaliser
-        value = bleach.clean(value, tags=[], strip=True).strip().lower()
-        
-        if not value:
-            raise serializers.ValidationError("L'email ne peut pas être vide")
-        
-        # Vérifier le format
+        """Validation de l'email"""
+        import re
         email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_regex, value):
             raise serializers.ValidationError("Format d'email invalide")
-        
-        # Vérifier la longueur totale
-        if len(value) > 254:  # RFC 5321
-            raise serializers.ValidationError("L'email est trop long")
-        
-        # Vérifier que le domaine n'est pas suspect
-        suspicious_domains = ['tempmail.com', 'throwaway.email', '10minutemail.com', 'guerrillamail.com']
-        domain = value.split('@')[1] if '@' in value else ''
-        if domain in suspicious_domains:
-            raise serializers.ValidationError("Ce domaine email n'est pas autorisé")
-        
+        return value.lower()
+    
+    def validate_discount_value(self, value):
+        """Validation de la remise"""
+        if value < 0:
+            raise serializers.ValidationError("La remise ne peut pas être négative")
+        if value > 100 and self.initial_data.get('discount_type') == 'percent':
+            raise serializers.ValidationError("La remise ne peut pas dépasser 100%")
         return value
+
+
+class QuoteEmailLogSerializer(serializers.ModelSerializer):
+    """Serializer pour les logs d'emails"""
     
-    def validate_client_phone(self, value):
-        """Validation du téléphone"""
-        if not value:
-            return ''
-        
-        # Nettoyer
-        value = bleach.clean(value, tags=[], strip=True).strip()
-        
-        # Supprimer les espaces, tirets, parenthèses
-        cleaned = re.sub(r'[\s\-\(\)]', '', value)
-        
-        # Vérifier le format
-        phone_regex = r'^\+?1?\d{9,15}$'
-        if not re.match(phone_regex, cleaned):
-            raise serializers.ValidationError("Format de téléphone invalide (utilisez le format international, ex: +33612345678)")
-        
-        return cleaned
+    email_type_display = serializers.CharField(source='get_email_type_display', read_only=True)
     
-    def validate_company_name(self, value):
-        """Validation du nom de l'entreprise"""
-        if not value:
-            return ''
-        
-        # Nettoyer
-        value = bleach.clean(value, tags=[], strip=True).strip()
-        
-        if len(value) > 200:
-            raise serializers.ValidationError("Le nom de l'entreprise ne peut pas dépasser 200 caractères")
-        
-        return value
+    class Meta:
+        model = QuoteEmailLog
+        fields = '__all__'
+        read_only_fields = ['id', 'sent_at']
+
+
+class QuoteStatisticsSerializer(serializers.Serializer):
+    """Serializer pour les statistiques des devis"""
     
-    def validate_project_description(self, value):
-        """Validation de la description du projet"""
-        # Nettoyer les tags HTML mais garder les retours à la ligne
-        value = bleach.clean(value, tags=[], strip=True).strip()
-        
-        if not value:
-            raise serializers.ValidationError("La description du projet ne peut pas être vide")
-        
-        if len(value) < 10:
-            raise serializers.ValidationError("La description doit contenir au moins 10 caractères")
-        
-        if len(value) > 5000:
-            raise serializers.ValidationError("La description ne peut pas dépasser 5000 caractères")
-        
-        # Vérifier qu'il y a du contenu significatif (pas que des espaces/ponctuation)
-        meaningful_chars = re.sub(r'[\s\.,;:!?]', '', value)
-        if len(meaningful_chars) < 5:
-            raise serializers.ValidationError("La description doit contenir du texte significatif")
-        
-        return value
+    total_quotes = serializers.IntegerField()
+    total_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    average_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
     
-    def validate_deadline(self, value):
-        """Validation de la date limite"""
-        if not value:
-            return None
-        
-        # Vérifier que la date n'est pas dans le passé
-        if value < date.today():
-            raise serializers.ValidationError("La date limite ne peut pas être dans le passé")
-        
-        # Vérifier que la date n'est pas trop loin dans le futur (ex: 2 ans max)
-        max_future_date = date.today() + timedelta(days=730)  # 2 ans
-        if value > max_future_date:
-            raise serializers.ValidationError("La date limite ne peut pas être dans plus de 2 ans")
-        
-        return value
+    status_breakdown = serializers.DictField()
+    conversion_rate = serializers.FloatField()
     
-    def validate_project_type(self, value):
-        """Vérifier que le type de projet existe et est actif"""
-        if not value:
-            raise serializers.ValidationError("Le type de projet est requis")
-        
-        if not value.is_active:
-            raise serializers.ValidationError("Ce type de projet n'est plus disponible")
-        
-        return value
-    
-    def validate_design_option(self, value):
-        """Vérifier que l'option de design existe et est active"""
-        if not value:
-            raise serializers.ValidationError("L'option de design est requise")
-        
-        if not value.is_active:
-            raise serializers.ValidationError("Cette option de design n'est plus disponible")
-        
-        return value
-    
-    def validate_complexity_level(self, value):
-        """Vérifier que le niveau de complexité existe et est actif"""
-        if not value:
-            raise serializers.ValidationError("Le niveau de complexité est requis")
-        
-        if not value.is_active:
-            raise serializers.ValidationError("Ce niveau de complexité n'est plus disponible")
-        
-        return value
-    
-    def validate_supplementary_options(self, value):
-        """Vérifier que toutes les options supplémentaires sont actives"""
-        if not value:
-            return []
-        
-        # Limiter le nombre d'options supplémentaires
-        if len(value) > 10:
-            raise serializers.ValidationError("Vous ne pouvez pas sélectionner plus de 10 options supplémentaires")
-        
-        # Vérifier que toutes les options sont actives
-        for option in value:
-            if not option.is_active:
-                raise serializers.ValidationError(f"L'option '{option.name}' n'est plus disponible")
-        
-        return value
-    
-    def validate(self, attrs):
-        """Validation globale du devis"""
-        # Vérifier la cohérence des données
-        project_type = attrs.get('project_type')
-        design_option = attrs.get('design_option')
-        complexity_level = attrs.get('complexity_level')
-        
-        if project_type and design_option and complexity_level:
-            # Calculer le prix estimé pour vérifier la cohérence
-            estimated_price = (project_type.base_price + design_option.price_supplement) * complexity_level.price_multiplier
-            
-            # Ajouter les options supplémentaires
-            supp_options = attrs.get('supplementary_options', [])
-            for option in supp_options:
-                estimated_price += option.price
-            
-            # Vérifier que le prix n'est pas anormalement élevé (protection contre manipulation)
-            if estimated_price > 1000000:  # 1 million d'euros
-                raise serializers.ValidationError("Le montant du devis semble anormalement élevé")
-        
-        return attrs
-    
-    def create(self, validated_data):
-        """Créer un devis avec calcul automatique du prix"""
-        # Récupérer les options supplémentaires
-        supplementary_options = validated_data.pop('supplementary_options', [])
-        
-        # Initialiser le prix à 0
-        validated_data['total_price'] = 0
-        
-        # Créer le devis
-        quote = Quote.objects.create(**validated_data)
-        
-        # Ajouter les options supplémentaires
-        if supplementary_options:
-            quote.supplementary_options.set(supplementary_options)
-        
-        # Calculer et sauvegarder le prix final
-        quote.total_price = quote.calculate_total_price()
-        quote.save(update_fields=['total_price'])
-        
-        return quote
-    
-    def update(self, instance, validated_data):
-        """Mise à jour d'un devis avec recalcul du prix"""
-        # Récupérer les options supplémentaires
-        supplementary_options = validated_data.pop('supplementary_options', None)
-        
-        # Mettre à jour les champs
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        
-        # Mettre à jour les options supplémentaires si fournies
-        if supplementary_options is not None:
-            instance.supplementary_options.set(supplementary_options)
-        
-        # Recalculer le prix
-        instance.total_price = instance.calculate_total_price()
-        instance.save()
-        
-        return instance
+    quotes_by_month = serializers.ListField()
+    top_project_types = serializers.ListField()
