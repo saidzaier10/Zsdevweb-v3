@@ -183,9 +183,10 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
         return data
 
 
+# ========== CLASSE MODIFIÉE ========== #
 class QuoteCreateSerializer(serializers.ModelSerializer):
     """Serializer pour la création de devis"""
-    
+
     class Meta:
         model = Quote
         fields = [
@@ -197,7 +198,7 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
             'discount_type', 'discount_value', 'discount_reason',
             'tva_rate', 'estimated_start_date'
         ]
-    
+
     def validate_client_email(self, value):
         """Validation de l'email"""
         import re
@@ -205,7 +206,7 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
         if not re.match(email_regex, value):
             raise serializers.ValidationError("Format d'email invalide")
         return value.lower()
-    
+
     def validate_discount_value(self, value):
         """Validation de la remise"""
         if value < 0:
@@ -213,6 +214,38 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
         if value > 100 and self.initial_data.get('discount_type') == 'percent':
             raise serializers.ValidationError("La remise ne peut pas dépasser 100%")
         return value
+
+    # ========== NOUVELLE MÉTHODE AJOUTÉE ========== #
+    def create(self, validated_data):
+        """Créer le devis et recalculer les prix avec les options supplémentaires"""
+        # Extraire les options supplémentaires (relation M2M)
+        supplementary_options = validated_data.pop('supplementary_options', [])
+
+        # Créer l'instance (sans les options supplémentaires pour l'instant)
+        quote = Quote.objects.create(**validated_data)
+
+        # Ajouter les options supplémentaires
+        if supplementary_options:
+            quote.supplementary_options.set(supplementary_options)
+
+            # Recalculer les prix avec les options supplémentaires
+            prices = quote.calculate_prices(skip_m2m=False)
+            quote.subtotal_ht = prices['subtotal_ht']
+            quote.discount_amount = prices['discount_amount']
+            quote.tva_amount = prices['tva_amount']
+            quote.total_ttc = prices['total_ttc']
+            quote.payment_first = prices['payment_first']
+            quote.payment_second = prices['payment_second']
+            quote.payment_final = prices['payment_final']
+            quote.estimated_duration_days = prices['estimated_duration_days']
+
+            # Sauvegarder avec les nouveaux prix
+            quote.save(update_fields=[
+                'subtotal_ht', 'discount_amount', 'tva_amount', 'total_ttc',
+                'payment_first', 'payment_second', 'payment_final', 'estimated_duration_days'
+            ])
+
+        return quote
 
 
 class QuoteEmailLogSerializer(serializers.ModelSerializer):

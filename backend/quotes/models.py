@@ -358,28 +358,34 @@ class Quote(models.Model):
     def __str__(self):
         return f"Devis #{self.quote_number or self.id} - {self.client_name}"
     
-    def calculate_prices(self):
+    # ========== MÉTHODE MODIFIÉE ========== #
+    def calculate_prices(self, skip_m2m=False):
         """
         Calcule tous les prix du devis avec remise
+
+        Args:
+            skip_m2m: Si True, ignore les relations ManyToMany (pour la création initiale)
         """
         # 1. Prix de base
         subtotal = Decimal('0.00')
-        
+
         if self.project_type:
             subtotal = self.project_type.base_price
-        
+
         # 2. Option de design
         if self.design_option:
             subtotal += self.design_option.price_supplement
-        
+
         # 3. Multiplicateur de complexité
         if self.complexity_level:
             subtotal *= self.complexity_level.price_multiplier
-        
+
         # 4. Options supplémentaires (paiement unique uniquement)
-        for option in self.supplementary_options.filter(billing_type='one_time'):
-            subtotal += option.price
-        
+        # Ne pas accéder aux M2M si l'objet n'a pas encore d'ID
+        if not skip_m2m and self.pk:
+            for option in self.supplementary_options.filter(billing_type='one_time'):
+                subtotal += option.price
+
         # 5. Calcul de la remise
         discount_amount = Decimal('0.00')
         if self.discount_value > 0:
@@ -387,26 +393,26 @@ class Quote(models.Model):
                 discount_amount = subtotal * (self.discount_value / Decimal('100'))
             elif self.discount_type == 'fixed':
                 discount_amount = self.discount_value
-        
+
         # 6. Sous-total après remise
         subtotal_after_discount = subtotal - discount_amount
-        
+
         # 7. TVA
         tva_amount = subtotal_after_discount * (self.tva_rate / Decimal('100'))
-        
+
         # 8. Total TTC
         total_ttc = subtotal_after_discount + tva_amount
-        
+
         # 9. Répartition des paiements (30% / 40% / 30%)
         payment_first = total_ttc * Decimal('0.30')
         payment_second = total_ttc * Decimal('0.40')
         payment_final = total_ttc * Decimal('0.30')
-        
+
         # 10. Durée estimée
         estimated_days = self.project_type.estimated_days if self.project_type else 10
         if self.complexity_level:
             estimated_days = int(estimated_days * float(self.complexity_level.price_multiplier))
-        
+
         return {
             'subtotal_ht': round(subtotal, 2),
             'discount_amount': round(discount_amount, 2),
@@ -460,22 +466,26 @@ class Quote(models.Model):
             return f"/devis/sign/{self.signature_token}/"
         return None
     
+    # ========== MÉTHODE MODIFIÉE ========== #
     def save(self, *args, **kwargs):
         """Calcule automatiquement les prix avant la sauvegarde"""
+        # Vérifier si c'est une création (pas d'ID)
+        is_new = self.pk is None
+
         # Générer le numéro de devis
         if not self.quote_number:
             self.generate_quote_number()
-        
+
         # Générer le token de signature
         if not self.signature_token:
             self.generate_signature_token()
-        
+
         # Calculer la date d'expiration
         if not self.expires_at:
             self.calculate_expiration_date()
-        
-        # Calculer les prix
-        prices = self.calculate_prices()
+
+        # Calculer les prix (skip M2M si création)
+        prices = self.calculate_prices(skip_m2m=is_new)
         self.subtotal_ht = prices['subtotal_ht']
         self.discount_amount = prices['discount_amount']
         self.tva_amount = prices['tva_amount']
@@ -484,13 +494,17 @@ class Quote(models.Model):
         self.payment_second = prices['payment_second']
         self.payment_final = prices['payment_final']
         self.estimated_duration_days = prices['estimated_duration_days']
-        
+
         # Calculer les dates estimées
         if self.estimated_start_date and not self.estimated_end_date:
             from datetime import timedelta
             self.estimated_end_date = self.estimated_start_date + timedelta(days=self.estimated_duration_days)
-        
+
         super().save(*args, **kwargs)
+
+        # Si c'était une création et qu'il y a des options supplémentaires à ajouter,
+        # recalculer les prix après que les M2M soient sauvegardées
+        # Cela sera géré par le serializer/view
 
 
 class QuoteEmailLog(models.Model):
