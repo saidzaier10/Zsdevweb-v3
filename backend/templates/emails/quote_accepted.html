@@ -1,0 +1,38 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Devis accepté - Zsdevweb{% endblock %}
+
+{% block content %}
+<h2>🎉 Félicitations {{ quote.client_name }} !</h2>
+
+<p>Votre devis <strong>#{{ quote.quote_number }}</strong> a été signé avec succès !</p>
+
+<div class="info-box" style="border-left-color: #10b981;">
+    <p><strong>✅ Votre projet est confirmé :</strong></p>
+    <ul style="margin: 10px 0; padding-left: 20px;">
+        <li><strong>Montant :</strong> {{ quote.total_ttc }} € TTC</li>
+        <li><strong>Durée estimée :</strong> {{ quote.estimated_duration_days }} jours</li>
+        <li><strong>Date de début :</strong> {{ quote.estimated_start_date|default:"À définir" }}</li>
+    </ul>
+</div>
+
+<p><strong>📋 Modalités de paiement :</strong></p>
+<ol>
+    <li><strong>1er paiement (30%) :</strong> {{ quote.payment_first }} € - À la signature</li>
+    <li><strong>2ème paiement (40%) :</strong> {{ quote.payment_second }} € - Mi-projet</li>
+    <li><strong>Solde (30%) :</strong> {{ quote.payment_final }} € - À la livraison</li>
+</ol>
+
+<p>Nous allons vous recontacter dans les plus brefs délais pour planifier le démarrage du projet.</p>
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{ quote_url }}" class="button">📄 Voir mon devis signé</a>
+</div>
+
+<p>Merci de votre confiance !</p>
+
+<p>
+    Cordialement,<br>
+    <strong>L'équipe Zsdevweb</strong>
+</p>
+{% endblock %}

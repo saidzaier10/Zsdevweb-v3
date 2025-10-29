@@ -365,3 +365,25 @@ SESSION_COOKIE_AGE = 1209600  # 2 weeks
 CSRF_COOKIE_HTTPONLY = False  # Must be False for JS to read it
 CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_USE_SESSIONS = False
+
+# ==========================================
+# EMAIL CONFIGURATION
+# ==========================================
+
+EMAIL_BACKEND = os.getenv(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend'  # Par défaut : affiche dans console
+    # Pour production, utilisez: 'django.core.mail.backends.smtp.EmailBackend'
+)
+
+# Configuration SMTP
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'contact@zsdevweb.com')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+# Template directory for emails
+TEMPLATES[0]['DIRS'] = [BASE_DIR / 'templates']

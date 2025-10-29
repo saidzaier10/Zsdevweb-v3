@@ -1,0 +1,28 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Rappel - Votre devis expire bientôt{% endblock %}
+
+{% block content %}
+<h2>Bonjour {{ quote.client_name }},</h2>
+
+<p>Votre devis <strong>#{{ quote.quote_number }}</strong> expire dans <strong>{{ days_left }} jours</strong>.</p>
+
+<div class="info-box" style="border-left-color: #f59e0b;">
+    <p><strong>⚠️ Rappel :</strong></p>
+    <p>Ce devis est valable jusqu'au <strong>{{ quote.expires_at|date:"d/m/Y" }}</strong>.</p>
+    <p><strong>Montant :</strong> {{ quote.total_ttc }} € TTC</p>
+</div>
+
+<p>Si ce projet vous intéresse toujours, n'oubliez pas de signer votre devis avant la date d'expiration.</p>
+
+<div style="text-align: center;">
+    <a href="{{ quote_url }}" class="button">📄 Consulter et signer mon devis</a>
+</div>
+
+<p>Si vous avez des questions ou souhaitez des modifications, contactez-nous !</p>
+
+<p>
+    Cordialement,<br>
+    <strong>L'équipe Zsdevweb</strong>
+</p>
+{% endblock %}

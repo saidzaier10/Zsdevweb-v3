@@ -1,0 +1,43 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Votre devis - Zsdevweb{% endblock %}
+
+{% block content %}
+<h2>Bonjour {{ quote.client_name }},</h2>
+
+<p>Nous avons bien reçu votre demande de devis <strong>#{{ quote.quote_number }}</strong>.</p>
+
+<div class="info-box">
+    <p><strong>📋 Récapitulatif de votre projet :</strong></p>
+    <ul style="margin: 10px 0; padding-left: 20px;">
+        <li><strong>Type :</strong> {{ quote.project_type.name }}</li>
+        <li><strong>Design :</strong> {{ quote.design_option.name }}</li>
+        <li><strong>Complexité :</strong> {{ quote.complexity_level.name }}</li>
+        <li><strong>Montant total :</strong> {{ quote.total_ttc }} € TTC</li>
+    </ul>
+</div>
+
+<p>Vous pouvez consulter votre devis détaillé en cliquant sur le bouton ci-dessous :</p>
+
+<div style="text-align: center;">
+    <a href="{{ quote_url }}" class="button">📄 Consulter mon devis</a>
+</div>
+
+<div class="divider"></div>
+
+<p><strong>Prochaines étapes :</strong></p>
+<ol>
+    <li>Consultez votre devis en ligne</li>
+    <li>Signez électroniquement si vous acceptez</li>
+    <li>Nous commençons le projet dès réception !</li>
+</ol>
+
+<p>Ce devis est valable <strong>30 jours</strong> à compter de sa création.</p>
+
+<p>Si vous avez des questions, n'hésitez pas à nous contacter.</p>
+
+<p>
+    Cordialement,<br>
+    <strong>L'équipe Zsdevweb</strong>
+</p>
+{% endblock %}
