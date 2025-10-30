@@ -1,273 +1,259 @@
-"""
-Serializers pour l'API Quotes Premium
-"""
-from rest_framework import serializers
 from django.utils import timezone
+from datetime import timedelta
+from django.shortcuts import get_object_or_404
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.db.models import Q, Count, Sum
+from django.http import HttpResponse
+
 from .models import (
     Company,
     ProjectType,
     DesignOption,
     ComplexityLevel,
     SupplementaryOption,
-    QuoteTemplate,
-    Quote,
-    QuoteEmailLog
+    Quote
 )
+from .serializers import (
+    CompanySerializer,
+    ProjectTypeSerializer,
+    DesignOptionSerializer,
+    ComplexityLevelSerializer,
+    SupplementaryOptionSerializer,
+    QuoteListSerializer,
+    QuoteDetailSerializer,
+    QuoteCreateSerializer
+)
+from .permissions import IsAdminOrReadOnly
+from .emails import send_quote_created_email, send_quote_accepted_email, send_quote_rejected_email
 
 
-class CompanySerializer(serializers.ModelSerializer):
-    """Serializer pour les informations de l'entreprise"""
+class CompanyViewSet(viewsets.ModelViewSet):
+    queryset = Company.objects.all()
+    serializer_class = CompanySerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+
+class ProjectTypeViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ProjectType.objects.filter(is_active=True)
+    serializer_class = ProjectTypeSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class DesignOptionViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = DesignOption.objects.filter(is_active=True)
+    serializer_class = DesignOptionSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class ComplexityLevelViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ComplexityLevel.objects.filter(is_active=True)
+    serializer_class = ComplexityLevelSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class SupplementaryOptionViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = SupplementaryOption.objects.filter(is_active=True)
+    serializer_class = SupplementaryOptionSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class QuoteViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
     
-    class Meta:
-        model = Company
-        fields = [
-            'id', 'name', 'logo', 'email', 'phone', 'address',
-            'siret', 'tva_number', 'primary_color', 'footer_text',
-            'email_signature', 'created_at', 'updated_at'
-        ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
-
-
-class ProjectTypeSerializer(serializers.ModelSerializer):
-    """Serializer pour les types de projets"""
-    
-    class Meta:
-        model = ProjectType
-        fields = '__all__'
-
-
-class DesignOptionSerializer(serializers.ModelSerializer):
-    """Serializer pour les options de design"""
-    
-    class Meta:
-        model = DesignOption
-        fields = '__all__'
-
-
-class ComplexityLevelSerializer(serializers.ModelSerializer):
-    """Serializer pour les niveaux de complexité"""
-    
-    class Meta:
-        model = ComplexityLevel
-        fields = '__all__'
-
-
-class SupplementaryOptionSerializer(serializers.ModelSerializer):
-    """Serializer pour les options supplémentaires"""
-    
-    billing_type_display = serializers.CharField(source='get_billing_type_display', read_only=True)
-    
-    class Meta:
-        model = SupplementaryOption
-        fields = '__all__'
-
-
-class QuoteTemplateSerializer(serializers.ModelSerializer):
-    """Serializer pour les templates de devis"""
-    
-    project_type_detail = ProjectTypeSerializer(source='project_type', read_only=True)
-    design_option_detail = DesignOptionSerializer(source='design_option', read_only=True)
-    complexity_level_detail = ComplexityLevelSerializer(source='complexity_level', read_only=True)
-    supplementary_options_detail = SupplementaryOptionSerializer(source='supplementary_options', many=True, read_only=True)
-    
-    class Meta:
-        model = QuoteTemplate
-        fields = [
-            'id', 'name', 'description',
-            'project_type', 'project_type_detail',
-            'design_option', 'design_option_detail',
-            'complexity_level', 'complexity_level_detail',
-            'supplementary_options', 'supplementary_options_detail',
-            'default_description', 'is_active',
-            'created_at', 'updated_at'
-        ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
-
-
-class QuoteListSerializer(serializers.ModelSerializer):
-    """Serializer simplifié pour la liste des devis"""
-    
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    project_type_name = serializers.CharField(source='project_type.name', read_only=True)
-    is_expired = serializers.BooleanField(read_only=True)
-    
-    class Meta:
-        model = Quote
-        fields = [
-            'id', 'quote_number', 'client_name', 'client_email',
-            'company_name', 'project_type_name', 'status', 'status_display',
-            'total_ttc', 'is_expired', 'created_at', 'expires_at'
-        ]
-
-
-class QuoteDetailSerializer(serializers.ModelSerializer):
-    """Serializer complet pour un devis"""
-    
-    # Relations en détail
-    project_type_detail = ProjectTypeSerializer(source='project_type', read_only=True)
-    design_option_detail = DesignOptionSerializer(source='design_option', read_only=True)
-    complexity_level_detail = ComplexityLevelSerializer(source='complexity_level', read_only=True)
-    supplementary_options_detail = SupplementaryOptionSerializer(source='supplementary_options', many=True, read_only=True)
-    
-    # Champs calculés
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    discount_type_display = serializers.CharField(source='get_discount_type_display', read_only=True)
-    is_expired = serializers.BooleanField(read_only=True)
-    signature_url = serializers.CharField(read_only=True)
-    
-    class Meta:
-        model = Quote
-        fields = [
-            # Identifiants
-            'id', 'quote_number',
-            
-            # Client
-            'client_name', 'client_email', 'client_phone',
-            'company_name', 'client_address',
-            
-            # Configuration
-            'project_type', 'project_type_detail',
-            'design_option', 'design_option_detail',
-            'complexity_level', 'complexity_level_detail',
-            'supplementary_options', 'supplementary_options_detail',
-            'template',
-            
-            # Détails projet
-            'project_description', 'deadline',
-            
-            # Financier
-            'subtotal_ht', 'discount_type', 'discount_type_display',
-            'discount_value', 'discount_reason', 'discount_amount',
-            'tva_rate', 'tva_amount', 'total_ttc',
-            
-            # Paiements
-            'payment_first', 'payment_second', 'payment_final',
-            
-            # Planning
-            'estimated_duration_days', 'estimated_start_date', 'estimated_end_date',
-            
-            # PDF
-            'pdf_file',
-            
-            # Signature
-            'signature_token', 'signature_url', 'signature_image',
-            'signed_at', 'client_ip',
-            
-            # Statut
-            'status', 'status_display', 'expires_at', 'is_expired',
-            
-            # Notes internes (visible uniquement par staff)
-            'internal_notes', 'assigned_to',
-            
-            # Dates
-            'created_at', 'updated_at', 'sent_at', 'viewed_at',
-            'accepted_at', 'rejected_at'
-        ]
-        read_only_fields = [
-            'id', 'quote_number', 'subtotal_ht', 'discount_amount',
-            'tva_amount', 'total_ttc', 'payment_first', 'payment_second',
-            'payment_final', 'estimated_duration_days', 'signature_token',
-            'signature_url', 'is_expired', 'created_at', 'updated_at'
-        ]
-    
-    def to_representation(self, instance):
-        """Masquer les notes internes pour les non-staff"""
-        data = super().to_representation(instance)
-        request = self.context.get('request')
+    def get_queryset(self):
+        queryset = Quote.objects.select_related(
+            'company',
+            'project_type',
+            'design_option',
+            'complexity_level'
+        ).prefetch_related('supplementary_options')
         
-        # Si l'utilisateur n'est pas staff, masquer les notes internes
-        if request and not (request.user and request.user.is_staff):
-            data.pop('internal_notes', None)
-            data.pop('assigned_to', None)
+        user = self.request.user
         
-        return data
-
-
-# ========== CLASSE MODIFIÉE ========== #
-class QuoteCreateSerializer(serializers.ModelSerializer):
-    """Serializer pour la création de devis"""
-
-    class Meta:
-        model = Quote
-        fields = [
-            'client_name', 'client_email', 'client_phone',
-            'company_name', 'client_address',
-            'project_type', 'design_option', 'complexity_level',
-            'supplementary_options', 'template',
-            'project_description', 'deadline',
-            'discount_type', 'discount_value', 'discount_reason',
-            'tva_rate', 'estimated_start_date'
-        ]
-
-    def validate_client_email(self, value):
-        """Validation de l'email"""
-        import re
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        if not re.match(email_regex, value):
-            raise serializers.ValidationError("Format d'email invalide")
-        return value.lower()
-
-    def validate_discount_value(self, value):
-        """Validation de la remise"""
-        if value < 0:
-            raise serializers.ValidationError("La remise ne peut pas être négative")
-        if value > 100 and self.initial_data.get('discount_type') == 'percent':
-            raise serializers.ValidationError("La remise ne peut pas dépasser 100%")
-        return value
-
-    # ========== NOUVELLE MÉTHODE AJOUTÉE ========== #
-    def create(self, validated_data):
-        """Créer le devis et recalculer les prix avec les options supplémentaires"""
-        # Extraire les options supplémentaires (relation M2M)
-        supplementary_options = validated_data.pop('supplementary_options', [])
-
-        # Créer l'instance (sans les options supplémentaires pour l'instant)
-        quote = Quote.objects.create(**validated_data)
-
-        # Ajouter les options supplémentaires
-        if supplementary_options:
-            quote.supplementary_options.set(supplementary_options)
-
-            # Recalculer les prix avec les options supplémentaires
-            prices = quote.calculate_prices(skip_m2m=False)
-            quote.subtotal_ht = prices['subtotal_ht']
-            quote.discount_amount = prices['discount_amount']
-            quote.tva_amount = prices['tva_amount']
-            quote.total_ttc = prices['total_ttc']
-            quote.payment_first = prices['payment_first']
-            quote.payment_second = prices['payment_second']
-            quote.payment_final = prices['payment_final']
-            quote.estimated_duration_days = prices['estimated_duration_days']
-
-            # Sauvegarder avec les nouveaux prix
-            quote.save(update_fields=[
-                'subtotal_ht', 'discount_amount', 'tva_amount', 'total_ttc',
-                'payment_first', 'payment_second', 'payment_final', 'estimated_duration_days'
-            ])
-
-        return quote
-
-
-class QuoteEmailLogSerializer(serializers.ModelSerializer):
-    """Serializer pour les logs d'emails"""
+        if user.is_staff or user.is_superuser:
+            return queryset.all()
+        return queryset.filter(company__user=user)
     
-    email_type_display = serializers.CharField(source='get_email_type_display', read_only=True)
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return QuoteCreateSerializer
+        elif self.action == 'retrieve':
+            return QuoteDetailSerializer
+        return QuoteListSerializer
     
-    class Meta:
-        model = QuoteEmailLog
-        fields = '__all__'
-        read_only_fields = ['id', 'sent_at']
-
-
-class QuoteStatisticsSerializer(serializers.Serializer):
-    """Serializer pour les statistiques des devis"""
+    def perform_create(self, serializer):
+        quote = serializer.save()
+        send_quote_created_email(quote)
     
-    total_quotes = serializers.IntegerField()
-    total_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
-    average_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    @action(detail=False, methods=['get'])
+    def my_quotes(self, request):
+        """Récupère les devis de l'utilisateur connecté"""
+        queryset = self.get_queryset().filter(company__user=request.user)
+        
+        status_filter = request.query_params.get('status', None)
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        queryset = queryset.order_by('-created_at')
+        
+        serializer = QuoteListSerializer(queryset, many=True)
+        return Response(serializer.data)
     
-    status_breakdown = serializers.DictField()
-    conversion_rate = serializers.FloatField()
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAdminUser])
+    def statistics(self, request):
+        """Statistiques pour l'admin"""
+        total_quotes = Quote.objects.count()
+        accepted_quotes = Quote.objects.filter(status='accepted').count()
+        pending_quotes = Quote.objects.filter(status__in=['sent', 'viewed']).count()
+        
+        total_revenue = Quote.objects.filter(status='accepted').aggregate(
+            total=Sum('total_price_with_tax')
+        )['total'] or 0
+        
+        recent_quotes = Quote.objects.select_related(
+            'company'
+        ).order_by('-created_at')[:10]
+        
+        return Response({
+            'total_quotes': total_quotes,
+            'accepted_quotes': accepted_quotes,
+            'pending_quotes': pending_quotes,
+            'total_revenue': float(total_revenue),
+            'recent_quotes': QuoteListSerializer(recent_quotes, many=True).data
+        })
     
-    quotes_by_month = serializers.ListField()
-    top_project_types = serializers.ListField()
+    @action(detail=True, methods=['post'])
+    def duplicate(self, request, pk=None):
+        """Duplique un devis existant"""
+        original_quote = self.get_object()
+        
+        new_quote = Quote.objects.create(
+            company=original_quote.company,
+            project_type=original_quote.project_type,
+            design_option=original_quote.design_option,
+            complexity_level=original_quote.complexity_level,
+            estimated_pages=original_quote.estimated_pages,
+            custom_features=original_quote.custom_features,
+            notes=original_quote.notes,
+            validity_days=original_quote.validity_days,
+            status='draft'
+        )
+        
+        new_quote.supplementary_options.set(original_quote.supplementary_options.all())
+        
+        prices = new_quote.calculate_prices(skip_m2m=False)
+        for field, value in prices.items():
+            setattr(new_quote, field, value)
+        new_quote.save()
+        
+        serializer = QuoteDetailSerializer(new_quote)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['get'])
+    def download_pdf(self, request, pk=None):
+        """Télécharge le PDF du devis"""
+        quote = self.get_object()
+        
+        try:
+            pdf_content = quote.generate_pdf()
+            
+            response = HttpResponse(pdf_content, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="devis_{quote.quote_number}.pdf"'
+            
+            return response
+        except Exception as e:
+            return Response(
+                {'error': f'Erreur lors de la génération du PDF: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['post'], url_path='sign/(?P<token>[^/.]+)', permission_classes=[permissions.AllowAny])
+    def sign_quote(self, request, token=None):
+        """Signature électronique du devis via token"""
+        try:
+            quote = Quote.objects.get(signature_token=token)
+        except Quote.DoesNotExist:
+            return Response(
+                {'error': 'Token invalide ou devis introuvable'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        if quote.status == 'accepted':
+            return Response(
+                {'error': 'Ce devis a déjà été signé'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if quote.is_expired():
+            return Response(
+                {'error': 'Ce devis a expiré'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        signature_data = request.data.get('signature')
+        signer_name = request.data.get('signer_name')
+        terms_accepted = request.data.get('terms_accepted', False)
+        
+        if not signature_data or not signer_name or not terms_accepted:
+            return Response(
+                {'error': 'Données de signature incomplètes'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        quote.client_signature = signature_data
+        quote.signer_name = signer_name
+        quote.signed_at = timezone.now()
+        quote.status = 'accepted'
+        quote.save()
+        
+        send_quote_accepted_email(quote)
+        
+        serializer = QuoteDetailSerializer(quote)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], url_path='public/(?P<token>[^/.]+)', permission_classes=[permissions.AllowAny])
+    def public_detail(self, request, token=None):
+        """Récupère un devis via token pour signature publique"""
+        try:
+            quote = Quote.objects.select_related(
+                'company',
+                'project_type',
+                'design_option',
+                'complexity_level'
+            ).prefetch_related('supplementary_options').get(signature_token=token)
+            
+            if quote.status != 'sent' or not quote.is_valid():
+                quote.status = 'viewed'
+                quote.save()
+            
+            serializer = QuoteDetailSerializer(quote)
+            return Response(serializer.data)
+        except Quote.DoesNotExist:
+            return Response(
+                {'error': 'Token invalide ou devis introuvable'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """Rejeter un devis"""
+        quote = self.get_object()
+        
+        if quote.status == 'accepted':
+            return Response(
+                {'error': 'Un devis accepté ne peut pas être rejeté'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        rejection_reason = request.data.get('reason', '')
+        
+        quote.status = 'rejected'
+        quote.rejection_reason = rejection_reason
+        quote.save()
+        
+        send_quote_rejected_email(quote)
+        
+        serializer = QuoteDetailSerializer(quote)
+        return Response(serializer.data)
