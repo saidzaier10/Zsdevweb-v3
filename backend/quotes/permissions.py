@@ -32,6 +32,22 @@ class IsAdminOrCreateOnly(permissions.BasePermission):
         # Autoriser la création pour tout le monde
         if request.method == 'POST':
             return True
-        
+
         # Pour les autres actions, seuls les admins
-        return request.user and request.user.is_staff
+        return bool(request.user and request.user.is_staff)
+
+
+class IsAdminOrReadOnly(permissions.BasePermission):
+    """
+    Permission qui autorise tout le monde à lire, mais uniquement les admins à modifier.
+    """
+
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return bool(request.user and request.user.is_staff)
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return bool(request.user and request.user.is_staff)

@@ -67,11 +67,11 @@ class Command(BaseCommand):
         ]
         
         for pt_data in project_types:
-            ProjectType.objects.get_or_create(
+            ProjectType.objects.update_or_create(
                 name=pt_data['name'],
                 defaults=pt_data
             )
-        self.stdout.write(self.style.SUCCESS(f'✓ {len(project_types)} types de projets créés'))
+        self.stdout.write(self.style.SUCCESS(f'✓ {len(project_types)} types de projets synchronisés'))
         
         # 3. Options de design
         design_options = [
@@ -93,11 +93,11 @@ class Command(BaseCommand):
         ]
         
         for do_data in design_options:
-            DesignOption.objects.get_or_create(
+            DesignOption.objects.update_or_create(
                 name=do_data['name'],
                 defaults=do_data
             )
-        self.stdout.write(self.style.SUCCESS(f'✓ {len(design_options)} options de design créées'))
+        self.stdout.write(self.style.SUCCESS(f'✓ {len(design_options)} options de design synchronisées'))
         
         # 4. Niveaux de complexité
         complexity_levels = [
@@ -119,11 +119,11 @@ class Command(BaseCommand):
         ]
         
         for cl_data in complexity_levels:
-            ComplexityLevel.objects.get_or_create(
+            ComplexityLevel.objects.update_or_create(
                 name=cl_data['name'],
                 defaults=cl_data
             )
-        self.stdout.write(self.style.SUCCESS(f'✓ {len(complexity_levels)} niveaux de complexité créés'))
+        self.stdout.write(self.style.SUCCESS(f'✓ {len(complexity_levels)} niveaux de complexité synchronisés'))
         
         # 5. Options supplémentaires
         supplementary_options = [
@@ -190,11 +190,11 @@ class Command(BaseCommand):
         ]
         
         for so_data in supplementary_options:
-            SupplementaryOption.objects.get_or_create(
+            SupplementaryOption.objects.update_or_create(
                 name=so_data['name'],
                 defaults=so_data
             )
-        self.stdout.write(self.style.SUCCESS(f'✓ {len(supplementary_options)} options supplémentaires créées'))
+        self.stdout.write(self.style.SUCCESS(f'✓ {len(supplementary_options)} options supplémentaires synchronisées'))
         
         # 6. Templates de devis
         templates_data = [
@@ -224,7 +224,7 @@ class Command(BaseCommand):
             design_option = DesignOption.objects.get(name=template_data['design_option'])
             complexity_level = ComplexityLevel.objects.get(name=template_data['complexity_level'])
             
-            template, created = QuoteTemplate.objects.get_or_create(
+            template, _ = QuoteTemplate.objects.update_or_create(
                 name=template_data['name'],
                 defaults={
                     'description': template_data['description'],
@@ -234,14 +234,15 @@ class Command(BaseCommand):
                     'default_description': template_data['default_description'],
                 }
             )
-            
-            # Ajouter les options supplémentaires
-            if created:
-                for option_name in template_data['supplementary_options']:
-                    option = SupplementaryOption.objects.get(name=option_name)
-                    template.supplementary_options.add(option)
-        
-        self.stdout.write(self.style.SUCCESS(f'✓ {len(templates_data)} templates créés'))
+       
+            # Synchroniser les options supplémentaires
+            option_objects = [
+                SupplementaryOption.objects.get(name=option_name)
+                for option_name in template_data['supplementary_options']
+            ]
+            template.supplementary_options.set(option_objects)
+
+        self.stdout.write(self.style.SUCCESS(f'✓ {len(templates_data)} templates synchronisés'))
         
         self.stdout.write(self.style.SUCCESS('\n🎉 Base de données peuplée avec succès !'))
         self.stdout.write(self.style.WARNING('\n📝 Prochaines étapes :'))

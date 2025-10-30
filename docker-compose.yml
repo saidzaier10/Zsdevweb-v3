@@ -21,7 +21,10 @@ services:
   backend:
     build: ./backend
     container_name: zsdevweb_backend
-    command: python manage.py runserver 0.0.0.0:8000
+    command: >-
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py populate_quotes_data &&
+             python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./backend:/app
     ports:
