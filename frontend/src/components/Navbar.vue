@@ -41,6 +41,26 @@
               Devis
             </router-link>
           </li>
+          <!-- Mes Devis (uniquement si connecté) -->
+          <li v-if="authStore.isAuthenticated">
+            <router-link 
+              to="/mes-devis" 
+              class="px-4 py-2 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all duration-200"
+              active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
+            >
+              Mes Devis
+            </router-link>
+          </li>
+          <!-- Admin (uniquement si admin) -->
+          <li v-if="authStore.user?.is_staff">
+            <router-link 
+              to="/admin/devis" 
+              class="px-4 py-2 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all duration-200"
+              active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
+            >
+              Admin
+            </router-link>
+          </li>
           <li>
             <router-link 
               to="/contact" 
@@ -152,6 +172,26 @@
             active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
           >
             Devis
+          </router-link>
+          <!-- Mes Devis (uniquement si connecté) -->
+          <router-link 
+            v-if="authStore.isAuthenticated"
+            to="/mes-devis" 
+            @click="mobileMenuOpen = false" 
+            class="block px-4 py-3 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all"
+            active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
+          >
+            Mes Devis
+          </router-link>
+          <!-- Admin (uniquement si admin) -->
+          <router-link 
+            v-if="authStore.user?.is_staff"
+            to="/admin/devis" 
+            @click="mobileMenuOpen = false" 
+            class="block px-4 py-3 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all"
+            active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
+          >
+            Admin
           </router-link>
           <router-link 
             to="/contact" 
