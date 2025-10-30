@@ -46,59 +46,13 @@
               <td style="color: #166534; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.signed_at|date:"d/m/Y à H:i" }}</td>
             </tr>
             <tr>
-              <td style="color: #15803d; font-size: 14px; padding: 5px 0;">Signé par:</td>
-              <td style="color: #166534; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.signature_name }}</td>
-            </tr>
-            <tr>
               <td style="color: #15803d; font-size: 14px; padding: 5px 0; border-top: 2px solid #86efac; padding-top: 15px;">Montant total TTC:</td>
               <td style="color: #10b981; font-size: 20px; font-weight: 700; text-align: right; padding: 5px 0; border-top: 2px solid #86efac; padding-top: 15px;">{{ quote.total_ttc }} €</td>
             </tr>
-            {% if quote.monthly_subscription_total > 0 %}
-            <tr>
-              <td style="color: #15803d; font-size: 14px; padding: 5px 0;">Abonnement mensuel:</td>
-              <td style="color: #10b981; font-size: 16px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.monthly_subscription_total }} €/mois</td>
-            </tr>
-            {% endif %}
           </table>
         </td>
       </tr>
     </table>
-    
-    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
-      <strong>Prochaines étapes :</strong>
-    </p>
-    
-    <ol style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 30px; padding-left: 20px;">
-      <li style="margin-bottom: 10px;"><strong>Aujourd'hui :</strong> Vous recevez cette confirmation par email</li>
-      <li style="margin-bottom: 10px;"><strong>Dans les 24h :</strong> Notre équipe vous contactera pour planifier le démarrage du projet</li>
-      <li style="margin-bottom: 10px;"><strong>Début du projet :</strong> Nous commencerons à travailler sur votre projet selon le calendrier convenu</li>
-      <li style="margin-bottom: 10px;"><strong>Suivi régulier :</strong> Vous recevrez des mises à jour régulières sur l'avancement</li>
-    </ol>
-    
-    <!-- Informations de paiement -->
-    <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin-bottom: 30px; border-radius: 4px;">
-      <h3 style="color: #1e40af; font-size: 16px; margin: 0 0 10px 0; font-weight: 600;">💳 Informations de paiement</h3>
-      <p style="color: #1e40af; font-size: 14px; margin: 5px 0; line-height: 22px;">
-        Un email séparé contenant les modalités de paiement et la facture vous sera envoyé dans les prochaines heures. 
-        Si vous avez des questions concernant le paiement, n'hésitez pas à nous contacter.
-      </p>
-    </div>
-    
-    <!-- Contact -->
-    <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
-      <h3 style="color: #1f2937; font-size: 16px; margin: 0 0 10px 0; font-weight: 600;">📞 Votre contact dédié</h3>
-      <p style="color: #4b5563; font-size: 14px; margin: 5px 0; line-height: 22px;">
-        Pour toute question concernant votre projet, vous pouvez nous joindre :
-      </p>
-      <ul style="color: #4b5563; font-size: 14px; margin: 10px 0; padding-left: 20px; line-height: 22px;">
-        <li>Email : <a href="mailto:contact@zsdevweb.com" style="color: #4f46e5; text-decoration: none;">contact@zsdevweb.com</a></li>
-        <li>Réponse sous 24h maximum</li>
-      </ul>
-    </div>
-    
-    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
-      Nous sommes impatients de transformer votre vision en réalité !
-    </p>
     
     <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 10px;">
       Cordialement,
@@ -107,10 +61,6 @@
     <p style="color: #1f2937; font-size: 16px; font-weight: 600; margin-bottom: 5px;">
       L'équipe ZsDevWeb
     </p>
-    
-    <p style="color: #6b7280; font-size: 14px; margin-bottom: 0;">
-      Développement Web & Solutions Digitales
-    </p>
   </td>
 </tr>
 
@@ -118,7 +68,7 @@
 <tr>
   <td style="padding: 20px 30px; background-color: #d1fae5; border-top: 1px solid #86efac;">
     <p style="color: #065f46; font-size: 14px; line-height: 20px; margin: 0; text-align: center;">
-      🎉 Merci de nous faire confiance pour votre projet ! Ensemble, créons quelque chose d'exceptionnel.
+      🎉 Merci de nous faire confiance pour votre projet !
     </p>
   </td>
 </tr>

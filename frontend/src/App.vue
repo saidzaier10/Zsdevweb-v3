@@ -44,7 +44,7 @@ onMounted(() => {
 
 <style>
 #app {
-  min-h-screen: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }

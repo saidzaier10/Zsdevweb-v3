@@ -1,171 +1,141 @@
-"""
-Views pour l'API Quotes Premium
-"""
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
-from django.db.models import Count, Sum, Avg, Q
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from django_filters.rest_framework import DjangoFilterBackend
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
-from django.http import FileResponse
-from datetime import datetime, timedelta
+from django.db.models import Q, Count, Sum
 from decimal import Decimal
-import logging
 
 from .models import (
     Company,
     ProjectType,
     DesignOption,
+    Feature,
     ComplexityLevel,
     SupplementaryOption,
-    QuoteTemplate,
-    Quote,
-    QuoteEmailLog
+    Quote
 )
 from .serializers import (
     CompanySerializer,
     ProjectTypeSerializer,
     DesignOptionSerializer,
+    FeatureSerializer,
     ComplexityLevelSerializer,
     SupplementaryOptionSerializer,
-    QuoteTemplateSerializer,
-    QuoteListSerializer,
-    QuoteDetailSerializer,
+    QuoteSerializer,
     QuoteCreateSerializer,
-    QuoteEmailLogSerializer,
-    QuoteStatisticsSerializer
+    QuoteDetailSerializer
 )
 from .permissions import IsAdminOrReadOnly
-from .pdf_generator import QuotePDFGenerator
+from .pdf_generator import generate_quote_pdf
 from .emails import (
     send_quote_created_email,
     send_quote_accepted_email,
-    send_quote_reminder_email
+    send_quote_rejected_email
 )
 
-logger = logging.getLogger('quotes')
 
-
-class CompanyViewSet(viewsets.ModelViewSet):
+class CompanyViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    ViewSet pour gérer les informations de l'entreprise
-    GET: Accessible à tous
-    POST/PUT/PATCH/DELETE: Admin uniquement
+    API endpoint pour les types d'entreprises.
+    Lecture seule pour tout le monde.
     """
-    queryset = Company.objects.all()
+    queryset = Company.objects.filter(is_active=True)
     serializer_class = CompanySerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [AllowAny]
 
 
 class ProjectTypeViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    ViewSet en lecture seule pour les types de projets
-    Filtre automatiquement pour ne montrer que les types actifs
+    API endpoint pour les types de projets.
+    Lecture seule pour tout le monde.
     """
+    queryset = ProjectType.objects.filter(is_active=True)
     serializer_class = ProjectTypeSerializer
     permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        return ProjectType.objects.filter(is_active=True)
 
 
 class DesignOptionViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    ViewSet en lecture seule pour les options de design
-    Filtre automatiquement pour ne montrer que les options actives
+    API endpoint pour les options de design.
+    Lecture seule pour tout le monde.
     """
+    queryset = DesignOption.objects.filter(is_active=True)
     serializer_class = DesignOptionSerializer
     permission_classes = [AllowAny]
 
-    def get_queryset(self):
-        return DesignOption.objects.filter(is_active=True)
+
+class FeatureViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint pour les fonctionnalités.
+    Lecture seule pour tout le monde.
+    """
+    queryset = Feature.objects.filter(is_active=True)
+    serializer_class = FeatureSerializer
+    permission_classes = [AllowAny]
 
 
 class ComplexityLevelViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    ViewSet en lecture seule pour les niveaux de complexité
-    Filtre automatiquement pour ne montrer que les niveaux actifs
+    API endpoint pour les niveaux de complexité.
+    Lecture seule pour tout le monde.
     """
+    queryset = ComplexityLevel.objects.filter(is_active=True)
     serializer_class = ComplexityLevelSerializer
     permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        return ComplexityLevel.objects.filter(is_active=True)
 
 
 class SupplementaryOptionViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    ViewSet en lecture seule pour les options supplémentaires
-    Supporte le filtrage par type de facturation
+    API endpoint pour les options supplémentaires.
+    Lecture seule pour tout le monde.
     """
+    queryset = SupplementaryOption.objects.filter(is_active=True)
     serializer_class = SupplementaryOptionSerializer
     permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        queryset = SupplementaryOption.objects.filter(is_active=True)
-        
-        # Filtrage par type de facturation
-        billing_type = self.request.query_params.get('billing_type')
-        if billing_type:
-            queryset = queryset.filter(billing_type=billing_type)
-        
-        return queryset
-
-
-class QuoteTemplateViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    ViewSet en lecture seule pour les templates de devis
-    Les admins voient tous les templates, les autres uniquement les actifs
-    """
-    serializer_class = QuoteTemplateSerializer
-    permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        if self.request.user and self.request.user.is_staff:
-            return QuoteTemplate.objects.all()
-        return QuoteTemplate.objects.filter(is_active=True)
 
 
 class QuoteViewSet(viewsets.ModelViewSet):
     """
-    ViewSet principal pour la gestion des devis
-    - POST (create): Accessible à tous (création publique)
-    - GET (list): Admin uniquement
-    - GET (retrieve): Admin ou avec token
-    - PUT/PATCH/DELETE: Admin uniquement
+    API endpoint pour les devis.
+    - Tout le monde peut créer un devis (POST)
+    - Seuls les admins peuvent lister/modifier/supprimer
+    - Actions publiques : public (GET par token), sign (POST signature)
     """
     queryset = Quote.objects.all().select_related(
-        'project_type', 'design_option', 'complexity_level'
-    ).prefetch_related('supplementary_options')
-
-    def get_permissions(self):
-        """Définir les permissions selon l'action"""
-        if self.action == 'create':
-            return [AllowAny()]
-        elif self.action in ['list', 'update', 'partial_update', 'destroy']:
-            return [IsAdminUser()]
-        elif self.action in ['my_quotes']:
-            return [IsAuthenticated()]
-        return [AllowAny()]
+        'company',
+        'project_type',
+        'complexity_level'
+    ).prefetch_related(
+        'design_options',
+        'features',
+        'supplementary_options'
+    )
+    permission_classes = [IsAdminOrReadOnly]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'company', 'project_type']
+    search_fields = ['quote_number', 'client_name', 'client_email', 'client_company']
+    ordering_fields = ['created_at', 'valid_until', 'total_ttc']
+    ordering = ['-created_at']
 
     def get_serializer_class(self):
-        """Choisir le serializer selon l'action"""
-        if self.action == 'list':
-            return QuoteListSerializer
-        elif self.action == 'create':
+        """Utilise des serializers différents selon l'action"""
+        if self.action == 'create':
             return QuoteCreateSerializer
-        return QuoteDetailSerializer
+        elif self.action in ['retrieve', 'update', 'partial_update']:
+            return QuoteDetailSerializer
+        return QuoteSerializer
 
-    def get_queryset(self):
-        """Filtrer les devis selon les paramètres"""
-        queryset = super().get_queryset()
-        
-        # Filtrage par statut
-        status_filter = self.request.query_params.get('status')
-        if status_filter:
-            queryset = queryset.filter(status=status_filter)
-        
-        return queryset.order_by('-created_at')
+    def get_permissions(self):
+        """Permissions personnalisées selon l'action"""
+        if self.action in ['create', 'public', 'sign']:
+            return [AllowAny()]
+        elif self.action == 'my_quotes':
+            return [IsAuthenticated()]
+        return [IsAuthenticated()]
 
     def create(self, request, *args, **kwargs):
         """Créer un nouveau devis et envoyer l'email"""
@@ -176,81 +146,31 @@ class QuoteViewSet(viewsets.ModelViewSet):
         # Envoyer l'email de création
         send_quote_created_email(quote)
         
-        logger.info(
-            f"Nouveau devis créé: #{quote.quote_number} pour {quote.client_name}",
-            extra={'quote_id': quote.id}
-        )
-        
-        # Retourner le devis complet
-        detail_serializer = QuoteDetailSerializer(quote, context={'request': request})
-        return Response(detail_serializer.data, status=status.HTTP_201_CREATED)
+        # Retourner la réponse avec le serializer détaillé
+        response_serializer = QuoteDetailSerializer(quote)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
-    def my_quotes(self, request):
-        """Liste des devis de l'utilisateur connecté (par email)"""
-        email = request.user.email
-        
-        if not email:
-            return Response(
-                {'error': 'Email utilisateur non trouvé'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Récupérer les devis de cet email
-        quotes = Quote.objects.filter(client_email=email).order_by('-created_at')
-        
-        # Filtrage optionnel par statut
-        status_filter = request.query_params.get('status')
-        if status_filter:
-            quotes = quotes.filter(status=status_filter)
-        
-        # Pagination
-        page = self.paginate_queryset(quotes)
-        if page is not None:
-            serializer = QuoteListSerializer(page, many=True, context={'request': request})
-            return self.get_paginated_response(serializer.data)
-        
-        serializer = QuoteListSerializer(quotes, many=True, context={'request': request})
-        return Response(serializer.data)
-
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], url_path='download-pdf')
     def download_pdf(self, request, pk=None):
         """Télécharger le PDF du devis"""
         quote = self.get_object()
         
         try:
-            # Générer le PDF
-            generator = QuotePDFGenerator(quote)
-            pdf_buffer = generator.generate()
+            pdf_buffer = generate_quote_pdf(quote)
             
-            # Retourner le PDF
-            response = FileResponse(
-                pdf_buffer,
-                content_type='application/pdf',
-                as_attachment=True,
-                filename=f'devis_{quote.quote_number}.pdf'
-            )
-            
-            logger.info(
-                f"PDF téléchargé pour le devis #{quote.quote_number}",
-                extra={'quote_id': quote.id}
-            )
+            response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{quote.quote_number}.pdf"'
             
             return response
-            
         except Exception as e:
-            logger.error(
-                f"Erreur génération PDF pour devis #{quote.quote_number}: {str(e)}",
-                extra={'quote_id': quote.id}
-            )
             return Response(
-                {'error': 'Erreur lors de la génération du PDF'},
+                {'error': f'Erreur lors de la génération du PDF: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='send-email')
     def send_email(self, request, pk=None):
-        """Envoyer le devis par email au client"""
+        """Envoyer l'email du devis au client"""
         quote = self.get_object()
         
         # Envoyer l'email
@@ -260,59 +180,32 @@ class QuoteViewSet(viewsets.ModelViewSet):
             # Mettre à jour le statut si c'était un brouillon
             if quote.status == 'draft':
                 quote.status = 'sent'
-                quote.sent_at = timezone.now()
-                quote.save(update_fields=['status', 'sent_at'])
+                quote.save(update_fields=['status'])
             
-            logger.info(
-                f"Email envoyé pour le devis #{quote.quote_number}",
-                extra={'quote_id': quote.id}
-            )
-            
-            return Response({
-                'message': 'Email envoyé avec succès',
-                'sent_at': quote.sent_at
-            })
+            return Response({'message': 'Email envoyé avec succès'})
         else:
             return Response(
-                {'error': "Erreur lors de l'envoi de l'email"},
+                {'error': 'Erreur lors de l\'envoi de l\'email'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     @action(detail=False, methods=['get'], url_path='public/(?P<token>[^/.]+)')
-    def public_view(self, request, token=None):
-        """Vue publique d'un devis via son token (sans authentification)"""
-        try:
-            quote = Quote.objects.get(signature_token=token)
-        except Quote.DoesNotExist:
-            return Response(
-                {'error': 'Devis non trouvé'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+    def public(self, request, token=None):
+        """Récupérer un devis via son token public (sans authentification)"""
+        quote = get_object_or_404(Quote, public_token=token)
         
-        # Marquer comme consulté si c'est la première fois
-        if quote.status == 'sent' and not quote.viewed_at:
+        # Mettre à jour le statut à 'viewed' si c'était 'sent'
+        if quote.status == 'sent':
             quote.status = 'viewed'
-            quote.viewed_at = timezone.now()
-            quote.save(update_fields=['status', 'viewed_at'])
-            
-            logger.info(
-                f"Devis #{quote.quote_number} consulté pour la première fois",
-                extra={'quote_id': quote.id}
-            )
+            quote.save(update_fields=['status'])
         
-        serializer = QuoteDetailSerializer(quote, context={'request': request})
+        serializer = QuoteDetailSerializer(quote)
         return Response(serializer.data)
 
     @action(detail=False, methods=['post'], url_path='sign/(?P<token>[^/.]+)')
     def sign_quote(self, request, token=None):
-        """Signer un devis électroniquement (sans authentification)"""
-        try:
-            quote = Quote.objects.get(signature_token=token)
-        except Quote.DoesNotExist:
-            return Response(
-                {'error': 'Devis non trouvé'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        """Signer un devis via son token public"""
+        quote = get_object_or_404(Quote, public_token=token)
         
         # Vérifier que le devis n'est pas déjà signé
         if quote.status == 'accepted':
@@ -322,158 +215,110 @@ class QuoteViewSet(viewsets.ModelViewSet):
             )
         
         # Vérifier que le devis n'est pas expiré
-        if quote.is_expired:
+        if quote.valid_until and quote.valid_until < timezone.now().date():
+            quote.status = 'expired'
+            quote.save(update_fields=['status'])
             return Response(
                 {'error': 'Ce devis a expiré'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
         # Récupérer les données de signature
-        signature_data = request.data.get('signature_data')
-        client_name = request.data.get('client_name')
+        signature_name = request.data.get('signature_name')
+        signature_image = request.data.get('signature_image')
         
-        if not signature_data or not client_name:
+        if not signature_name or not signature_image:
             return Response(
-                {'error': 'Données de signature manquantes'},
+                {'error': 'Le nom et la signature sont requis'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Sauvegarder la signature
-        # TODO: Implémenter le stockage de l'image de signature
+        # Mettre à jour le devis
         quote.status = 'accepted'
+        quote.signature_name = signature_name
+        quote.signature_image = signature_image
         quote.signed_at = timezone.now()
-        quote.accepted_at = timezone.now()
-        quote.client_ip = self._get_client_ip(request)
-        quote.save(update_fields=['status', 'signed_at', 'accepted_at', 'client_ip'])
+        quote.ip_address = self.get_client_ip(request)
+        quote.save()
         
         # Envoyer l'email de confirmation
         send_quote_accepted_email(quote)
         
-        logger.info(
-            f"Devis #{quote.quote_number} signé par {client_name}",
-            extra={'quote_id': quote.id, 'ip': quote.client_ip}
-        )
-        
-        serializer = QuoteDetailSerializer(quote, context={'request': request})
+        serializer = QuoteDetailSerializer(quote)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
-    def statistics(self, request):
-        """Statistiques globales des devis (admin uniquement)"""
-        # Stats basiques
-        total_quotes = Quote.objects.count()
-        total_amount = Quote.objects.aggregate(total=Sum('total_ttc'))['total'] or Decimal('0.00')
-        average_amount = Quote.objects.aggregate(avg=Avg('total_ttc'))['avg'] or Decimal('0.00')
-        
-        # Répartition par statut
-        status_breakdown = {}
-        for status_choice in Quote.STATUS_CHOICES:
-            status_key = status_choice[0]
-            count = Quote.objects.filter(status=status_key).count()
-            status_breakdown[status_key] = count
-        
-        # Taux de conversion (acceptés / envoyés)
-        sent_count = Quote.objects.filter(status__in=['sent', 'viewed', 'accepted']).count()
-        accepted_count = Quote.objects.filter(status='accepted').count()
-        conversion_rate = (accepted_count / sent_count * 100) if sent_count > 0 else 0
-        
-        # Devis par mois (12 derniers mois)
-        quotes_by_month = []
-        now = timezone.now()
-        for i in range(12):
-            month_start = (now - timedelta(days=30*i)).replace(day=1)
-            month_end = (month_start + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
-            count = Quote.objects.filter(
-                created_at__gte=month_start,
-                created_at__lte=month_end
-            ).count()
-            quotes_by_month.append({
-                'month': month_start.strftime('%Y-%m'),
-                'count': count
-            })
-        quotes_by_month.reverse()
-        
-        # Top types de projets
-        top_project_types = Quote.objects.values(
-            'project_type__name'
-        ).annotate(
-            count=Count('id')
-        ).order_by('-count')[:5]
-        
-        data = {
-            'total_quotes': total_quotes,
-            'total_amount': total_amount,
-            'average_amount': average_amount,
-            'status_breakdown': status_breakdown,
-            'conversion_rate': round(conversion_rate, 2),
-            'quotes_by_month': quotes_by_month,
-            'top_project_types': list(top_project_types)
-        }
-        
-        serializer = QuoteStatisticsSerializer(data)
-        return Response(serializer.data)
-
-    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    @action(detail=True, methods=['post'])
     def duplicate(self, request, pk=None):
-        """Dupliquer un devis (admin uniquement)"""
+        """Dupliquer un devis existant"""
         original_quote = self.get_object()
         
         # Créer une copie
-        new_quote = Quote.objects.create(
-            client_name=original_quote.client_name,
-            client_email=original_quote.client_email,
-            client_phone=original_quote.client_phone,
-            company_name=original_quote.company_name,
-            client_address=original_quote.client_address,
-            project_type=original_quote.project_type,
-            design_option=original_quote.design_option,
-            complexity_level=original_quote.complexity_level,
-            project_description=original_quote.project_description,
-            deadline=original_quote.deadline,
-            discount_type=original_quote.discount_type,
-            discount_value=original_quote.discount_value,
-            discount_reason=original_quote.discount_reason,
-            tva_rate=original_quote.tva_rate,
-            estimated_start_date=original_quote.estimated_start_date,
-            status='draft'
-        )
+        quote_copy = Quote.objects.get(pk=original_quote.pk)
+        quote_copy.pk = None
+        quote_copy.quote_number = None  # Sera généré automatiquement
+        quote_copy.status = 'draft'
+        quote_copy.signature_name = None
+        quote_copy.signature_image = None
+        quote_copy.signed_at = None
+        quote_copy.ip_address = None
+        quote_copy.save()
         
-        # Copier les options supplémentaires
-        new_quote.supplementary_options.set(original_quote.supplementary_options.all())
+        # Copier les relations ManyToMany
+        quote_copy.design_options.set(original_quote.design_options.all())
+        quote_copy.features.set(original_quote.features.all())
+        quote_copy.supplementary_options.set(original_quote.supplementary_options.all())
         
-        logger.info(
-            f"Devis #{original_quote.quote_number} dupliqué en #{new_quote.quote_number}",
-            extra={'original_id': original_quote.id, 'new_id': new_quote.id}
-        )
-        
-        serializer = QuoteDetailSerializer(new_quote, context={'request': request})
+        serializer = QuoteDetailSerializer(quote_copy)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def _get_client_ip(self, request):
-        """Récupérer l'IP du client"""
+    @action(detail=False, methods=['get'], url_path='my-quotes')
+    def my_quotes(self, request):
+        """Récupérer les devis de l'utilisateur connecté par email"""
+        user_email = request.user.email
+        
+        queryset = self.get_queryset().filter(client_email=user_email)
+        
+        # Filtrer par statut si demandé
+        status_filter = request.query_params.get('status')
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def statistics(self, request):
+        """Obtenir les statistiques sur les devis"""
+        from django.db.models import Count, Sum, Q
+        
+        queryset = self.get_queryset()
+        
+        stats = {
+            'total_quotes': queryset.count(),
+            'draft_quotes': queryset.filter(status='draft').count(),
+            'sent_quotes': queryset.filter(status='sent').count(),
+            'viewed_quotes': queryset.filter(status='viewed').count(),
+            'accepted_quotes': queryset.filter(status='accepted').count(),
+            'rejected_quotes': queryset.filter(status='rejected').count(),
+            'expired_quotes': queryset.filter(status='expired').count(),
+            'pending_quotes': queryset.filter(status__in=['sent', 'viewed']).count(),
+            'total_revenue': queryset.filter(status='accepted').aggregate(
+                total=Sum('total_ttc')
+            )['total'] or Decimal('0.00'),
+        }
+        
+        return Response(stats)
+
+    def get_client_ip(self, request):
+        """Obtenir l'adresse IP du client"""
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
             ip = x_forwarded_for.split(',')[0]
         else:
             ip = request.META.get('REMOTE_ADDR')
         return ip
-
-
-class QuoteEmailLogViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    ViewSet en lecture seule pour les logs d'emails
-    Admin uniquement
-    Supporte le filtrage par devis
-    """
-    serializer_class = QuoteEmailLogSerializer
-    permission_classes = [IsAdminUser]
-
-    def get_queryset(self):
-        queryset = QuoteEmailLog.objects.all()
-        
-        # Filtrage par devis
-        quote_id = self.request.query_params.get('quote')
-        if quote_id:
-            queryset = queryset.filter(quote_id=quote_id)
-        
-        return queryset.order_by('-sent_at')

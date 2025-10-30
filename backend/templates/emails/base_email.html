@@ -1,106 +1,130 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Zsdevweb{% endblock %}</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333333;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-        .email-container {
-            max-width: 600px;
-            margin: 20px auto;
-            background-color: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        .email-header {
-            background: linear-gradient(135deg, #1a56db 0%, #7c3aed 100%);
-            padding: 30px;
-            text-align: center;
-        }
-        .email-header h1 {
-            color: #ffffff;
-            margin: 0;
-            font-size: 28px;
-            font-weight: 700;
-        }
-        .email-body {
-            padding: 40px 30px;
-        }
-        .email-body h2 {
-            color: #1a56db;
-            font-size: 24px;
-            margin-top: 0;
-        }
-        .button {
-            display: inline-block;
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #1a56db 0%, #7c3aed 100%);
-            color: #ffffff !important;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 600;
-            margin: 20px 0;
-            transition: transform 0.2s;
-        }
-        .button:hover {
-            transform: translateY(-2px);
-        }
-        .info-box {
-            background-color: #f8fafc;
-            border-left: 4px solid #1a56db;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 4px;
-        }
-        .email-footer {
-            background-color: #f8fafc;
-            padding: 20px 30px;
-            text-align: center;
-            color: #6b7280;
-            font-size: 14px;
-        }
-        .email-footer a {
-            color: #1a56db;
-            text-decoration: none;
-        }
-        .divider {
-            height: 1px;
-            background-color: #e5e7eb;
-            margin: 30px 0;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>{% block title %}ZsDevWeb{% endblock %}</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f3f4f6;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+    }
+    .email-header {
+      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .email-logo {
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: bold;
+      margin: 0;
+      text-decoration: none;
+    }
+    .email-tagline {
+      color: #e0e7ff;
+      font-size: 14px;
+      margin: 5px 0 0 0;
+    }
+    .email-body {
+      padding: 0;
+    }
+    .email-footer {
+      background-color: #1f2937;
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .footer-text {
+      color: #9ca3af;
+      font-size: 14px;
+      margin: 5px 0;
+    }
+    .footer-link {
+      color: #6366f1;
+      text-decoration: none;
+    }
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+    .social-links {
+      margin: 20px 0;
+    }
+    .social-link {
+      display: inline-block;
+      margin: 0 10px;
+      color: #6366f1;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    @media only screen and (max-width: 600px) {
+      .email-container {
+        width: 100% !important;
+      }
+    }
+  </style>
 </head>
-<body>
-    <div class="email-container">
-        <div class="email-header">
-            <h1>🚀 Zsdevweb</h1>
-        </div>
-        <div class="email-body">
-            {% block content %}{% endblock %}
-        </div>
-        <div class="email-footer">
-            <p>
-                <strong>Zsdevweb</strong><br>
-                Développement web professionnel<br>
-                📧 contact@zsdevweb.com | 📱 +33 6 12 34 56 78
-            </p>
-            <p style="margin-top: 15px;">
-                <a href="https://www.zsdevweb.com">Visitez notre site</a> | 
-                <a href="https://www.zsdevweb.com/portfolio">Portfolio</a>
-            </p>
-            <p style="font-size: 12px; color: #9ca3af; margin-top: 15px;">
-                © {{ year }} Zsdevweb. Tous droits réservés.
-            </p>
-        </div>
-    </div>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6;">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 0; padding: 20px 0;">
+    <tr>
+      <td align="center">
+        <table class="email-container" role="presentation" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td class="email-header" style="background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); padding: 30px 20px; text-align: center;">
+              <h1 class="email-logo" style="color: #ffffff; font-size: 28px; font-weight: bold; margin: 0;">
+                ZsDevWeb
+              </h1>
+              <p class="email-tagline" style="color: #e0e7ff; font-size: 14px; margin: 5px 0 0 0;">
+                Développement Web & Solutions Digitales
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td class="email-body">
+              {% block content %}{% endblock %}
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td class="email-footer" style="background-color: #1f2937; padding: 30px 20px; text-align: center;">
+              <div class="social-links" style="margin: 20px 0;">
+                <a href="https://www.linkedin.com/in/zsdevweb" class="social-link" style="display: inline-block; margin: 0 10px; color: #6366f1; text-decoration: none;">LinkedIn</a>
+                <a href="https://github.com/zsdevweb" class="social-link" style="display: inline-block; margin: 0 10px; color: #6366f1; text-decoration: none;">GitHub</a>
+                <a href="https://www.zsdevweb.com" class="social-link" style="display: inline-block; margin: 0 10px; color: #6366f1; text-decoration: none;">Portfolio</a>
+              </div>
+              
+              <p class="footer-text" style="color: #9ca3af; font-size: 14px; margin: 5px 0;">
+                <strong>ZsDevWeb</strong><br>
+                Email: <a href="mailto:contact@zsdevweb.com" class="footer-link" style="color: #6366f1; text-decoration: none;">contact@zsdevweb.com</a><br>
+                Web: <a href="https://www.zsdevweb.com" class="footer-link" style="color: #6366f1; text-decoration: none;">www.zsdevweb.com</a>
+              </p>
+              
+              <p class="footer-text" style="color: #6b7280; font-size: 12px; margin: 20px 0 0 0;">
+                Vous recevez cet email car vous avez demandé un devis sur ZsDevWeb.<br>
+                Si vous pensez qu'il s'agit d'une erreur, veuillez nous contacter.
+              </p>
+              
+              <p class="footer-text" style="color: #6b7280; font-size: 11px; margin: 10px 0 0 0;">
+                &copy; {{ current_year|default:"2024" }} ZsDevWeb. Tous droits réservés.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>

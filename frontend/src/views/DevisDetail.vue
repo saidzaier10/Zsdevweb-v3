@@ -288,7 +288,6 @@ const downloadPDF = async () => {
     downloadingPDF.value = true
     const response = await downloadQuotePDF(quote.value.id)
     
-    // Créer un lien de téléchargement
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
     link.href = url

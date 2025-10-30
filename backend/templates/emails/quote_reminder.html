@@ -42,38 +42,6 @@
       </tr>
     </table>
     
-    <!-- Informations du devis -->
-    <table style="width: 100%; background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
-      <tr>
-        <td style="padding: 10px;">
-          <table style="width: 100%;">
-            <tr>
-              <td style="color: #6b7280; font-size: 14px; padding: 5px 0;">Numéro de devis:</td>
-              <td style="color: #1f2937; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.quote_number }}</td>
-            </tr>
-            <tr>
-              <td style="color: #6b7280; font-size: 14px; padding: 5px 0;">Date de création:</td>
-              <td style="color: #1f2937; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.created_at|date:"d/m/Y" }}</td>
-            </tr>
-            <tr>
-              <td style="color: #6b7280; font-size: 14px; padding: 5px 0;">Date d'expiration:</td>
-              <td style="color: #dc2626; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.valid_until|date:"d/m/Y" }}</td>
-            </tr>
-            <tr>
-              <td style="color: #6b7280; font-size: 14px; padding: 5px 0; border-top: 2px solid #e5e7eb; padding-top: 15px;">Montant total TTC:</td>
-              <td style="color: #4f46e5; font-size: 20px; font-weight: 700; text-align: right; padding: 5px 0; border-top: 2px solid #e5e7eb; padding-top: 15px;">{{ quote.total_ttc }} €</td>
-            </tr>
-            {% if quote.monthly_subscription_total > 0 %}
-            <tr>
-              <td style="color: #6b7280; font-size: 14px; padding: 5px 0;">Abonnement mensuel:</td>
-              <td style="color: #4f46e5; font-size: 16px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.monthly_subscription_total }} €/mois</td>
-            </tr>
-            {% endif %}
-          </table>
-        </td>
-      </tr>
-    </table>
-    
     <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 30px;">
       Pour ne pas perdre cette proposition et démarrer votre projet, signez votre devis dès maintenant :
     </p>
@@ -89,66 +57,12 @@
       </tr>
     </table>
     
-    <!-- Que se passe-t-il après expiration -->
-    <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; margin-bottom: 30px; border-radius: 4px;">
-      <h3 style="color: #991b1b; font-size: 16px; margin: 0 0 10px 0; font-weight: 600;">📅 Après expiration</h3>
-      <p style="color: #991b1b; font-size: 14px; margin: 5px 0; line-height: 22px;">
-        Si le devis n'est pas signé avant le <strong>{{ quote.valid_until|date:"d/m/Y" }}</strong>, il ne sera plus valable. 
-        Vous pourrez toujours demander un nouveau devis, mais les tarifs et conditions pourraient être différents.
-      </p>
-    </div>
-    
-    <!-- Points clés du projet -->
-    {% if quote.project_type_details or quote.description %}
-    <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin-bottom: 30px; border-radius: 4px;">
-      <h3 style="color: #1e40af; font-size: 16px; margin: 0 0 10px 0; font-weight: 600;">Rappel de votre projet</h3>
-      {% if quote.project_type_details %}
-      <p style="color: #1e40af; font-size: 14px; margin: 5px 0;">
-        <strong>Type:</strong> {{ quote.project_type_details.name }}
-      </p>
-      {% endif %}
-      {% if quote.description %}
-      <p style="color: #1e40af; font-size: 14px; margin: 5px 0;">
-        <strong>Description:</strong> {{ quote.description }}
-      </p>
-      {% endif %}
-    </div>
-    {% endif %}
-    
-    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
-      <strong>Des questions ?</strong> Notre équipe reste à votre disposition pour :
-    </p>
-    
-    <ul style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 30px; padding-left: 20px;">
-      <li style="margin-bottom: 10px;">Clarifier certains points du devis</li>
-      <li style="margin-bottom: 10px;">Ajuster la proposition si nécessaire</li>
-      <li style="margin-bottom: 10px;">Discuter des modalités de paiement</li>
-      <li style="margin-bottom: 10px;">Répondre à toutes vos interrogations</li>
-    </ul>
-    
-    <!-- Contact rapide -->
-    <table style="width: 100%; background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
-      <tr>
-        <td>
-          <h3 style="color: #1f2937; font-size: 16px; margin: 0 0 10px 0; font-weight: 600; text-align: center;">💬 Contactez-nous</h3>
-          <p style="color: #4b5563; font-size: 14px; margin: 0; text-align: center;">
-            Email : <a href="mailto:contact@zsdevweb.com" style="color: #4f46e5; text-decoration: none; font-weight: 600;">contact@zsdevweb.com</a><br>
-            <span style="color: #6b7280; font-size: 12px;">Réponse garantie sous 24h</span>
-          </p>
-        </td>
-      </tr>
-    </table>
-    
     <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 10px;">
       Cordialement,
     </p>
     
     <p style="color: #1f2937; font-size: 16px; font-weight: 600; margin-bottom: 5px;">
       L'équipe ZsDevWeb
-    </p>
-    
-    <p style="color: #6b7280; font-size: 14px; margin-bottom: 0;">
-      Développement Web & Solutions Digitales
     </p>
   </td>
 </tr>

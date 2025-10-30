@@ -64,33 +64,6 @@
       </tr>
     </table>
     
-    <!-- Récapitulatif du projet -->
-    {% if quote.project_type_details or quote.description %}
-    <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin-bottom: 30px; border-radius: 4px;">
-      <h3 style="color: #1e40af; font-size: 16px; margin: 0 0 10px 0; font-weight: 600;">Votre projet</h3>
-      {% if quote.project_type_details %}
-      <p style="color: #1e40af; font-size: 14px; margin: 5px 0;">
-        <strong>Type:</strong> {{ quote.project_type_details.name }}
-      </p>
-      {% endif %}
-      {% if quote.description %}
-      <p style="color: #1e40af; font-size: 14px; margin: 5px 0;">
-        <strong>Description:</strong> {{ quote.description }}
-      </p>
-      {% endif %}
-    </div>
-    {% endif %}
-    
-    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
-      <strong>Prochaines étapes :</strong>
-    </p>
-    
-    <ol style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 30px; padding-left: 20px;">
-      <li style="margin-bottom: 10px;">Consultez le détail de votre devis en ligne</li>
-      <li style="margin-bottom: 10px;">Si vous êtes d'accord, signez-le électroniquement</li>
-      <li style="margin-bottom: 10px;">Nous démarrerons votre projet dès réception de votre signature</li>
-    </ol>
-    
     <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
       Des questions ? N'hésitez pas à nous contacter, nous sommes là pour vous accompagner !
     </p>
@@ -101,10 +74,6 @@
     
     <p style="color: #1f2937; font-size: 16px; font-weight: 600; margin-bottom: 5px;">
       L'équipe ZsDevWeb
-    </p>
-    
-    <p style="color: #6b7280; font-size: 14px; margin-bottom: 0;">
-      Développement Web & Solutions Digitales
     </p>
   </td>
 </tr>

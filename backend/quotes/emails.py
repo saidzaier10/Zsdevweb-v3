@@ -6,7 +6,6 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils import timezone
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -109,126 +108,20 @@ def send_quote_email(quote, email_type='created', context=None):
 
 
 def send_quote_created_email(quote):
-    """
-    Envoie l'email de création de devis
-    
-    Args:
-        quote: Instance du modèle Quote
-        
-    Returns:
-        bool: True si l'email a été envoyé avec succès
-    """
+    """Envoie l'email de création de devis"""
     return send_quote_email(quote, email_type='created')
 
 
 def send_quote_accepted_email(quote):
-    """
-    Envoie l'email de confirmation de signature
-    
-    Args:
-        quote: Instance du modèle Quote
-        
-    Returns:
-        bool: True si l'email a été envoyé avec succès
-    """
+    """Envoie l'email de confirmation de signature"""
     return send_quote_email(quote, email_type='accepted')
 
 
 def send_quote_rejected_email(quote):
-    """
-    Envoie l'email d'accusé de réception de refus
-    
-    Args:
-        quote: Instance du modèle Quote
-        
-    Returns:
-        bool: True si l'email a été envoyé avec succès
-    """
+    """Envoie l'email d'accusé de réception de refus"""
     return send_quote_email(quote, email_type='rejected')
 
 
 def send_quote_reminder_email(quote):
-    """
-    Envoie l'email de rappel avant expiration
-    
-    Args:
-        quote: Instance du modèle Quote
-        
-    Returns:
-        bool: True si l'email a été envoyé avec succès
-    """
+    """Envoie l'email de rappel avant expiration"""
     return send_quote_email(quote, email_type='reminder')
-
-
-def send_expiration_reminders():
-    """
-    Fonction utilitaire pour envoyer des rappels aux devis qui expirent bientôt
-    Peut être appelée par une tâche CRON ou Celery
-    
-    Envoie un rappel pour les devis qui expirent dans 7 jours et n'ont pas encore été signés
-    
-    Returns:
-        dict: Statistiques sur les emails envoyés
-    """
-    from quotes.models import Quote
-    from datetime import timedelta
-    
-    # Calculer la date dans 7 jours
-    reminder_date = timezone.now().date() + timedelta(days=7)
-    
-    # Trouver les devis qui expirent dans 7 jours et qui sont en attente
-    quotes_to_remind = Quote.objects.filter(
-        valid_until=reminder_date,
-        status__in=['sent', 'viewed']
-    )
-    
-    success_count = 0
-    error_count = 0
-    
-    for quote in quotes_to_remind:
-        if send_quote_reminder_email(quote):
-            success_count += 1
-        else:
-            error_count += 1
-    
-    logger.info(
-        f"Rappels d'expiration envoyés: {success_count} succès, {error_count} échecs"
-    )
-    
-    return {
-        'total': quotes_to_remind.count(),
-        'success': success_count,
-        'errors': error_count
-    }
-
-
-def send_bulk_quotes_update(quote_ids, email_type='reminder', context=None):
-    """
-    Envoie un email groupé à plusieurs devis
-    
-    Args:
-        quote_ids: Liste des IDs de devis
-        email_type: Type d'email à envoyer
-        context: Contexte additionnel
-        
-    Returns:
-        dict: Statistiques sur les envois
-    """
-    from quotes.models import Quote
-    
-    quotes = Quote.objects.filter(id__in=quote_ids)
-    
-    success_count = 0
-    error_count = 0
-    
-    for quote in quotes:
-        if send_quote_email(quote, email_type=email_type, context=context):
-            success_count += 1
-        else:
-            error_count += 1
-    
-    return {
-        'total': quotes.count(),
-        'success': success_count,
-        'errors': error_count
-    }
