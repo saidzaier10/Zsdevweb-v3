@@ -450,8 +450,10 @@ import {
   getSupplementaryOptions,
   createQuote 
 } from '../api/quotes'
+import { useToastStore } from '../stores/toast'
 
 const router = useRouter()
+const toastStore = useToastStore()
 
 const currentStep = ref(1)
 const loadingOptions = ref(true)
@@ -493,6 +495,7 @@ onMounted(async () => {
   } catch (error) {
     console.error('Erreur lors du chargement:', error)
     errorMessage.value = 'Erreur lors du chargement des options'
+    toastStore.addToast('Erreur lors du chargement des options', 'error')
   } finally {
     loadingOptions.value = false
   }
@@ -550,30 +553,18 @@ const calculateTotal = () => {
   const complexityLevel = getSelectedComplexityLevel()
   const suppOptions = getSelectedSupplementaryOptions()
   
-  console.log('=== Calcul du total ===')
-  console.log('projectType:', projectType)
-  console.log('designOption:', designOption)
-  console.log('complexityLevel:', complexityLevel)
-  console.log('suppOptions:', suppOptions)
-  
   if (!projectType || !designOption || !complexityLevel) {
-    console.log('Données manquantes pour le calcul')
     return 0
   }
   
-  // Convertir en nombres avec Number() qui est plus fiable que parseFloat
+  // Convertir en nombres
   total = Number(projectType.base_price) + Number(designOption.price_supplement)
   total = total * Number(complexityLevel.price_multiplier)
   
-  console.log('Total avant options supplémentaires:', total)
-  
   // Ajouter les options supplémentaires
   suppOptions.forEach(option => {
-    console.log('Ajout option:', option.name, option.price)
     total += Number(option.price)
   })
-  
-  console.log('Total final:', total)
   
   return Math.round(total)
 }
@@ -598,15 +589,18 @@ const submitQuote = async () => {
     errorMessage.value = ''
     successMessage.value = ''
     
-    await createQuote(quote.value)
+    const response = await createQuote(quote.value)
     
-    successMessage.value = 'Votre demande de devis a été envoyée avec succès ! Nous vous contacterons dans les plus brefs délais.'
+    successMessage.value = `Votre devis ${response.data.quote_number} a été créé avec succès ! Un email de confirmation a été envoyé à ${quote.value.client_email}.`
+    toastStore.addToast('Devis créé et envoyé par email avec succès !', 'success')
     
+    // Rediriger vers la page de mes devis après 2 secondes
     setTimeout(() => {
-      router.push('/')
-    }, 3000)
+      router.push('/mes-devis')
+    }, 2000)
   } catch (error) {
-    errorMessage.value = "Erreur lors de l'envoi du devis. Veuillez réessayer."
+    errorMessage.value = error.response?.data?.error || "Erreur lors de l'envoi du devis. Veuillez réessayer."
+    toastStore.addToast(errorMessage.value, 'error')
     console.error('Erreur:', error)
   } finally {
     submitting.value = false

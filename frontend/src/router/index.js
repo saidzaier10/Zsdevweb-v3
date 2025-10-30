@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
-import { useAuthStore } from '../stores/auth' 
+import { useAuthStore } from '../stores/auth'
 
 const routes = [
   {
@@ -42,16 +42,16 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/signature/:token',
+    name: 'SignatureDevis',
+    component: () => import('../views/SignatureDevis.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/admin/devis',
     name: 'AdminDevis',
     component: () => import('../views/AdminDevis.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
-  },
-  {
-    path: '/signature/:token',
-    name: 'SignatureDevis',
-    component: () => import('../views/SignatureDevis.vue'),
-    meta: { requiresAuth: false } // Route publique accessible via token
   },
   {
     path: '/contact',
@@ -64,37 +64,22 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior(to, from, savedPosition) {
-    if (savedPosition) {
-      return savedPosition
-    } else {
-      return { top: 0 }
-    }
-  }
 })
 
 // Guard pour protéger les routes
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
+  const token = localStorage.getItem('accessToken')
   
-  if (to.meta.requiresAuth) {
-    const token = localStorage.getItem('accessToken')
-    if (!token) {
-      next('/login')
+  if (to.meta.requiresAuth && !token) {
+    // Rediriger vers login si auth requise
+    next('/login')
+  } else if (to.meta.requiresAdmin) {
+    // Vérifier si l'utilisateur est admin
+    if (!authStore.user || !authStore.user.is_staff) {
+      next('/')
     } else {
-      // Vérifier si la route nécessite des droits admin
-      if (to.meta.requiresAdmin) {
-        // Vérifier si l'utilisateur est admin (à adapter selon votre structure de données)
-        const user = authStore.user
-        if (user && user.is_staff) {
-          next()
-        } else {
-          // Rediriger vers la page d'accueil si pas admin
-          next('/')
-        }
-      } else {
-        next()
-      }
+      next()
     }
   } else {
     next()

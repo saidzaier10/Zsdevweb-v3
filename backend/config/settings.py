@@ -366,35 +366,17 @@ CSRF_COOKIE_HTTPONLY = False  # Must be False for JS to read it
 CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_USE_SESSIONS = False
 
-# ==============================================================================
+# ============================================================================
 # EMAIL CONFIGURATION
-# ==============================================================================
+# ============================================================================
 
-# Email backend - Use console backend for development, SMTP for production
-EMAIL_BACKEND = os.getenv(
-    'EMAIL_BACKEND', 
-    'django.core.mail.backends.console.EmailBackend'
-)
-
-# SMTP Configuration (pour production)
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
-EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False').lower() in ('true', '1', 'yes')
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'said.zaier@gmail.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'said.zaier@gmail.com')
 
-# Default email addresses
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'contact@zsdevweb.com')
-SERVER_EMAIL = os.getenv('SERVER_EMAIL', 'contact@zsdevweb.com')
-
-# Email timeout
-EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))
-
-
-# ==============================================================================
-# FRONTEND CONFIGURATION
-# ==============================================================================
-
-# Frontend URL for email links
+# URL du frontend pour les liens dans les emails
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')

@@ -1,13 +1,11 @@
 """
 Service d'envoi d'emails pour les devis
 """
-import logging
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils import timezone
-
-logger = logging.getLogger(__name__)
+from datetime import timedelta
 
 
 def send_quote_email(quote, email_type='created', context=None):
@@ -15,113 +13,139 @@ def send_quote_email(quote, email_type='created', context=None):
     Envoie un email pour un devis
     
     Args:
-        quote: Instance du modèle Quote
+        quote: Instance du devis
         email_type: Type d'email ('created', 'accepted', 'rejected', 'reminder')
         context: Contexte additionnel pour le template
-        
-    Returns:
-        bool: True si l'email a été envoyé avec succès, False sinon
     """
-    # Configuration des emails selon le type
+    if context is None:
+        context = {}
+    
+    # Configuration selon le type d'email
     email_configs = {
         'created': {
             'subject': f'Votre devis {quote.quote_number} - ZsDevWeb',
             'template': 'emails/quote_created.html',
-            'from_email': settings.DEFAULT_FROM_EMAIL,
         },
         'accepted': {
-            'subject': f'Confirmation de signature - {quote.quote_number} - ZsDevWeb',
+            'subject': f'Confirmation de signature - Devis {quote.quote_number}',
             'template': 'emails/quote_accepted.html',
-            'from_email': settings.DEFAULT_FROM_EMAIL,
         },
         'rejected': {
-            'subject': f'Accusé de réception - {quote.quote_number} - ZsDevWeb',
+            'subject': f'Accusé de réception - Devis {quote.quote_number}',
             'template': 'emails/quote_rejected.html',
-            'from_email': settings.DEFAULT_FROM_EMAIL,
         },
         'reminder': {
-            'subject': f'Rappel - Votre devis {quote.quote_number} expire bientôt - ZsDevWeb',
+            'subject': f'Rappel - Votre devis {quote.quote_number} expire bientôt',
             'template': 'emails/quote_reminder.html',
-            'from_email': settings.DEFAULT_FROM_EMAIL,
-        }
+        },
     }
     
-    # Vérifier que le type d'email est valide
-    if email_type not in email_configs:
-        logger.error(f"Type d'email invalide: {email_type}")
-        return False
+    config = email_configs.get(email_type)
+    if not config:
+        raise ValueError(f"Type d'email invalide: {email_type}")
     
-    config = email_configs[email_type]
+    # Préparer le contexte
+    email_context = {
+        'quote': quote,
+        'frontend_url': settings.FRONTEND_URL,
+        'signature_link': f"{settings.FRONTEND_URL}/signature/{quote.signature_token}",
+        'current_year': timezone.now().year,
+        **context
+    }
     
+    # Ajouter le nombre de jours restants pour les rappels
+    if email_type == 'reminder' and quote.expires_at:
+        days_remaining = (quote.expires_at - timezone.now()).days
+        email_context['days_remaining'] = max(0, days_remaining)
+    
+    # Rendre le template HTML
+    html_content = render_to_string(config['template'], email_context)
+    
+    # Créer l'email
+    email = EmailMultiAlternatives(
+        subject=config['subject'],
+        body=f"Veuillez consulter ce message au format HTML.",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[quote.client_email],
+    )
+    email.attach_alternative(html_content, "text/html")
+    
+    # Envoyer
     try:
-        # Construire l'URL publique du devis
-        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
-        quote_url = f"{frontend_url}/signature/{quote.public_token}"
+        email.send()
         
-        # Préparer le contexte pour le template
-        email_context = {
-            'quote': quote,
-            'quote_url': quote_url,
-            'current_year': timezone.now().year,
-        }
-        
-        # Ajouter le contexte additionnel si fourni
-        if context:
-            email_context.update(context)
-        
-        # Pour les rappels, calculer les jours restants
-        if email_type == 'reminder' and quote.valid_until:
-            days_remaining = (quote.valid_until - timezone.now().date()).days
-            email_context['days_remaining'] = max(0, days_remaining)
-        
-        # Rendre le template HTML
-        html_content = render_to_string(config['template'], email_context)
-        
-        # Créer l'email
-        email = EmailMultiAlternatives(
+        # Logger l'envoi
+        from .models import QuoteEmailLog
+        QuoteEmailLog.objects.create(
+            quote=quote,
+            email_type=email_type,
+            recipient=quote.client_email,
             subject=config['subject'],
-            body='',  # Le corps texte sera vide, on utilise uniquement HTML
-            from_email=config['from_email'],
-            to=[quote.client_email],
-            reply_to=[config['from_email']],
-        )
-        
-        # Attacher la version HTML
-        email.attach_alternative(html_content, "text/html")
-        
-        # Envoyer l'email
-        email.send(fail_silently=False)
-        
-        logger.info(
-            f"Email '{email_type}' envoyé avec succès pour le devis {quote.quote_number} "
-            f"à {quote.client_email}"
+            success=True
         )
         
         return True
-        
     except Exception as e:
-        logger.error(
-            f"Erreur lors de l'envoi de l'email '{email_type}' pour le devis "
-            f"{quote.quote_number}: {str(e)}"
+        # Logger l'échec
+        from .models import QuoteEmailLog
+        QuoteEmailLog.objects.create(
+            quote=quote,
+            email_type=email_type,
+            recipient=quote.client_email,
+            subject=config['subject'],
+            success=False,
+            error_message=str(e)
         )
-        return False
+        
+        raise
 
 
 def send_quote_created_email(quote):
     """Envoie l'email de création de devis"""
-    return send_quote_email(quote, email_type='created')
+    return send_quote_email(quote, 'created')
 
 
 def send_quote_accepted_email(quote):
     """Envoie l'email de confirmation de signature"""
-    return send_quote_email(quote, email_type='accepted')
+    return send_quote_email(quote, 'accepted')
 
 
 def send_quote_rejected_email(quote):
     """Envoie l'email d'accusé de réception de refus"""
-    return send_quote_email(quote, email_type='rejected')
+    return send_quote_email(quote, 'rejected')
 
 
 def send_quote_reminder_email(quote):
-    """Envoie l'email de rappel avant expiration"""
-    return send_quote_email(quote, email_type='reminder')
+    """Envoie un email de rappel pour un devis qui expire bientôt"""
+    return send_quote_email(quote, 'reminder')
+
+
+def send_expiring_quotes_reminders():
+    """
+    Envoie des rappels pour tous les devis qui expirent dans 3 jours
+    
+    À utiliser dans une tâche cron/celery quotidienne
+    """
+    from .models import Quote
+    
+    three_days_from_now = timezone.now() + timedelta(days=3)
+    expiring_quotes = Quote.objects.filter(
+        status__in=['sent', 'viewed'],
+        expires_at__date=three_days_from_now.date()
+    )
+    
+    sent_count = 0
+    failed_count = 0
+    
+    for quote in expiring_quotes:
+        try:
+            send_quote_reminder_email(quote)
+            sent_count += 1
+        except Exception:
+            failed_count += 1
+    
+    return {
+        'sent': sent_count,
+        'failed': failed_count,
+        'total': expiring_quotes.count()
+    }

@@ -4,15 +4,13 @@
     <router-view />
     <Footer />
     
-    <!-- Système de notifications toast -->
+    <!-- Toast Container -->
     <div class="fixed top-4 right-4 z-50 space-y-3">
-      <Toast 
-        v-for="toast in toasts" 
-        :key="toast.id" 
+      <Toast
+        v-for="toast in toasts"
+        :key="toast.id"
         :type="toast.type"
-        :title="toast.title"
         :message="toast.message"
-        :duration="toast.duration"
         @close="removeToast(toast.id)"
       />
     </div>
@@ -33,7 +31,7 @@ const toastStore = useToastStore()
 const toasts = computed(() => toastStore.toasts)
 
 const removeToast = (id) => {
-  toastStore.remove(id)
+  toastStore.removeToast(id)
 }
 
 onMounted(() => {

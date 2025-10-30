@@ -1,130 +1,157 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>{% block title %}ZsDevWeb{% endblock %}</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f3f4f6;
-    }
-    .email-container {
-      max-width: 600px;
-      margin: 0 auto;
-      background-color: #ffffff;
-    }
-    .email-header {
-      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-      padding: 30px 20px;
-      text-align: center;
-    }
-    .email-logo {
-      color: #ffffff;
-      font-size: 28px;
-      font-weight: bold;
-      margin: 0;
-      text-decoration: none;
-    }
-    .email-tagline {
-      color: #e0e7ff;
-      font-size: 14px;
-      margin: 5px 0 0 0;
-    }
-    .email-body {
-      padding: 0;
-    }
-    .email-footer {
-      background-color: #1f2937;
-      padding: 30px 20px;
-      text-align: center;
-    }
-    .footer-text {
-      color: #9ca3af;
-      font-size: 14px;
-      margin: 5px 0;
-    }
-    .footer-link {
-      color: #6366f1;
-      text-decoration: none;
-    }
-    .footer-link:hover {
-      text-decoration: underline;
-    }
-    .social-links {
-      margin: 20px 0;
-    }
-    .social-link {
-      display: inline-block;
-      margin: 0 10px;
-      color: #6366f1;
-      text-decoration: none;
-      font-size: 14px;
-    }
-    @media only screen and (max-width: 600px) {
-      .email-container {
-        width: 100% !important;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ZsDevWeb{% endblock %}</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f5f7;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        .email-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .email-header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .email-body {
+            padding: 40px 30px;
+            color: #333333;
+            line-height: 1.6;
+        }
+        .email-body h2 {
+            color: #4f46e5;
+            margin-top: 0;
+            font-size: 24px;
+        }
+        .email-body p {
+            margin: 15px 0;
+            font-size: 16px;
+        }
+        .cta-button {
+            display: inline-block;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+            transition: transform 0.2s;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+        .info-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #4f46e5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box strong {
+            color: #4f46e5;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            color: #856404;
+        }
+        .email-footer {
+            background-color: #1f2937;
+            color: #9ca3af;
+            padding: 30px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .email-footer a {
+            color: #6366f1;
+            text-decoration: none;
+        }
+        .social-links {
+            margin: 20px 0;
+        }
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #6366f1;
+            text-decoration: none;
+        }
+        @media only screen and (max-width: 600px) {
+            .email-body {
+                padding: 20px 15px;
+            }
+            .email-header h1 {
+                font-size: 24px;
+            }
+            .cta-button {
+                display: block;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f3f4f6;">
-  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 0; padding: 20px 0;">
-    <tr>
-      <td align="center">
-        <table class="email-container" role="presentation" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-          
-          <!-- Header -->
-          <tr>
-            <td class="email-header" style="background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); padding: 30px 20px; text-align: center;">
-              <h1 class="email-logo" style="color: #ffffff; font-size: 28px; font-weight: bold; margin: 0;">
-                ZsDevWeb
-              </h1>
-              <p class="email-tagline" style="color: #e0e7ff; font-size: 14px; margin: 5px 0 0 0;">
-                Développement Web & Solutions Digitales
-              </p>
-            </td>
-          </tr>
-
-          <!-- Body -->
-          <tr>
-            <td class="email-body">
-              {% block content %}{% endblock %}
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td class="email-footer" style="background-color: #1f2937; padding: 30px 20px; text-align: center;">
-              <div class="social-links" style="margin: 20px 0;">
-                <a href="https://www.linkedin.com/in/zsdevweb" class="social-link" style="display: inline-block; margin: 0 10px; color: #6366f1; text-decoration: none;">LinkedIn</a>
-                <a href="https://github.com/zsdevweb" class="social-link" style="display: inline-block; margin: 0 10px; color: #6366f1; text-decoration: none;">GitHub</a>
-                <a href="https://www.zsdevweb.com" class="social-link" style="display: inline-block; margin: 0 10px; color: #6366f1; text-decoration: none;">Portfolio</a>
-              </div>
-              
-              <p class="footer-text" style="color: #9ca3af; font-size: 14px; margin: 5px 0;">
-                <strong>ZsDevWeb</strong><br>
-                Email: <a href="mailto:contact@zsdevweb.com" class="footer-link" style="color: #6366f1; text-decoration: none;">contact@zsdevweb.com</a><br>
-                Web: <a href="https://www.zsdevweb.com" class="footer-link" style="color: #6366f1; text-decoration: none;">www.zsdevweb.com</a>
-              </p>
-              
-              <p class="footer-text" style="color: #6b7280; font-size: 12px; margin: 20px 0 0 0;">
-                Vous recevez cet email car vous avez demandé un devis sur ZsDevWeb.<br>
-                Si vous pensez qu'il s'agit d'une erreur, veuillez nous contacter.
-              </p>
-              
-              <p class="footer-text" style="color: #6b7280; font-size: 11px; margin: 10px 0 0 0;">
-                &copy; {{ current_year|default:"2024" }} ZsDevWeb. Tous droits réservés.
-              </p>
-            </td>
-          </tr>
-
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td class="email-header">
+                    <h1>ZsDevWeb</h1>
+                </td>
+            </tr>
         </table>
-      </td>
-    </tr>
-  </table>
+
+        <!-- Body -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td class="email-body">
+                    {% block content %}{% endblock %}
+                </td>
+            </tr>
+        </table>
+
+        <!-- Footer -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td class="email-footer">
+                    <p style="margin: 0 0 10px 0;">
+                        <strong style="color: #ffffff; font-size: 18px;">ZsDevWeb</strong>
+                    </p>
+                    <p style="margin: 5px 0;">Développement Web & Solutions Digitales</p>
+                    
+                    <div class="social-links">
+                        <a href="mailto:said.zaier@gmail.com">Email</a> •
+                        <a href="{{ frontend_url }}">Site Web</a> •
+                        <a href="{{ frontend_url }}/portfolio">Portfolio</a>
+                    </div>
+                    
+                    <p style="margin: 20px 0 0 0; font-size: 12px;">
+                        © {{ current_year }} ZsDevWeb. Tous droits réservés.
+                    </p>
+                </td>
+            </tr>
+        </table>
+    </div>
 </body>
 </html>

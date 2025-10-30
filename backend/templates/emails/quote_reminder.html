@@ -1,78 +1,41 @@
-{% extends "emails/base_email.html" %}
+{% extends 'emails/base_email.html' %}
 
-{% block title %}Rappel - Votre devis {{ quote.quote_number }} expire bientôt - ZsDevWeb{% endblock %}
+{% block title %}Rappel - Votre devis {{ quote.quote_number }} expire bientôt{% endblock %}
 
 {% block content %}
-<tr>
-  <td style="padding: 40px 30px;">
-    <!-- Icône d'attention -->
-    <table style="width: 100%; margin-bottom: 20px;">
-      <tr>
-        <td align="center">
-          <div style="width: 80px; height: 80px; background-color: #fef3c7; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-            <span style="font-size: 40px; color: #f59e0b;">⏰</span>
-          </div>
-        </td>
-      </tr>
-    </table>
-    
-    <h1 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600; text-align: center;">
-      Votre devis expire bientôt !
-    </h1>
-    
-    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
-      Bonjour <strong>{{ quote.client_name }}</strong>,
-    </p>
-    
-    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
-      Nous vous contactons pour vous rappeler que votre devis <strong>{{ quote.quote_number }}</strong> arrive à expiration.
-    </p>
-    
-    <!-- Alerte d'expiration -->
-    <table style="width: 100%; background-color: #fef3c7; border-radius: 8px; padding: 20px; margin-bottom: 30px; border: 2px solid #fbbf24;">
-      <tr>
-        <td align="center">
-          <p style="color: #92400e; font-size: 18px; font-weight: 600; margin: 0 0 10px 0;">
-            ⚠️ Expire le {{ quote.valid_until|date:"d/m/Y" }}
-          </p>
-          <p style="color: #92400e; font-size: 14px; margin: 0;">
-            Il vous reste {{ days_remaining }} jour{{ days_remaining|pluralize }} pour signer ce devis
-          </p>
-        </td>
-      </tr>
-    </table>
-    
-    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 30px;">
-      Pour ne pas perdre cette proposition et démarrer votre projet, signez votre devis dès maintenant :
-    </p>
-    
-    <!-- Bouton d'action -->
-    <table style="width: 100%; margin-bottom: 30px;">
-      <tr>
-        <td align="center">
-          <a href="{{ quote_url }}" style="display: inline-block; padding: 14px 32px; background-color: #f59e0b; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
-            Signer mon devis maintenant
-          </a>
-        </td>
-      </tr>
-    </table>
-    
-    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 10px;">
-      Cordialement,
-    </p>
-    
-    <p style="color: #1f2937; font-size: 16px; font-weight: 600; margin-bottom: 5px;">
-      L'équipe ZsDevWeb
-    </p>
-  </td>
-</tr>
+<h2>Bonjour {{ quote.client_name }},</h2>
 
-<!-- Section d'urgence -->
-<tr>
-  <td style="padding: 20px 30px; background-color: #fef3c7; border-top: 1px solid #fbbf24;">
-    <p style="color: #92400e; font-size: 14px; line-height: 20px; margin: 0; text-align: center;">
-      ⏳ Ne laissez pas passer cette opportunité ! Signez votre devis avant le <strong>{{ quote.valid_until|date:"d/m/Y" }}</strong>
-    </p>
-  </td>
-</tr>
+<p>Votre devis <strong>{{ quote.quote_number }}</strong> expire dans <strong style="color: #ef4444;">{{ days_remaining }} jour{{ days_remaining|pluralize }}</strong>.</p>
+
+<div class="warning-box">
+    ⚠️ <strong>Date d'expiration :</strong> {{ quote.expires_at|date:"d/m/Y" }}<br>
+    Passé ce délai, un nouveau devis devra être établi.
+</div>
+
+<div class="info-box">
+    <strong>📄 Devis :</strong> {{ quote.quote_number }}<br>
+    <strong>💼 Projet :</strong> {{ quote.project_type.name }}<br>
+    <strong>💰 Montant :</strong> {{ quote.total_ttc }} € TTC
+</div>
+
+<p>Pour accepter ce devis avant son expiration, il vous suffit de le signer en ligne :</p>
+
+<center>
+    <a href="{{ signature_link }}" class="cta-button">
+        ✍️ Signer mon devis maintenant
+    </a>
+</center>
+
+<p><strong>Vous avez des questions ?</strong></p>
+<p>N'hésitez pas à me contacter pour discuter de votre projet ou si vous avez besoin d'ajustements.</p>
+
+<center>
+    <a href="mailto:said.zaier@gmail.com" class="cta-button" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+        💬 Poser une question
+    </a>
+</center>
+
+<p>À très bientôt,<br>
+<strong>Said Zaier</strong><br>
+ZsDevWeb</p>
 {% endblock %}

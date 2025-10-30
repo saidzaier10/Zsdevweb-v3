@@ -1,230 +1,254 @@
 <template>
-  <div class="devis-detail-container">
-    <div class="container mx-auto px-4 py-8">
-      <!-- Loader -->
-      <div v-if="loading" class="flex justify-center items-center min-h-screen">
-        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-600"></div>
+  <div class="min-h-screen bg-gray-50 dark:bg-dark-900 py-12">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Loading -->
+      <div v-if="loading" class="text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
 
-      <!-- Erreur -->
-      <div v-else-if="error" class="max-w-2xl mx-auto">
-        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
-          <svg class="mx-auto h-12 w-12 text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <h3 class="text-lg font-medium text-red-800 dark:text-red-200 mb-2">Erreur</h3>
-          <p class="text-red-600 dark:text-red-300">{{ error }}</p>
-          <router-link to="/mes-devis" class="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-            Retour à mes devis
-          </router-link>
-        </div>
-      </div>
-
-      <!-- Détail du devis -->
-      <div v-else-if="quote" class="max-w-5xl mx-auto">
-        <!-- En-tête -->
-        <div class="flex justify-between items-start mb-8">
-          <div>
-            <router-link to="/mes-devis" class="text-indigo-600 dark:text-indigo-400 hover:underline mb-2 inline-block">
-              ← Retour à mes devis
-            </router-link>
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ quote.quote_number }}</h1>
-            <p class="text-gray-600 dark:text-gray-400 mt-1">
-              Créé le {{ formatDate(quote.created_at) }}
-            </p>
-          </div>
-          <div class="flex gap-3">
-            <span :class="getStatusBadgeClass(quote.status)" class="px-4 py-2 rounded-full text-sm font-medium">
-              {{ getStatusLabel(quote.status) }}
+      <!-- Devis Detail -->
+      <div v-else-if="quote" class="bg-white dark:bg-dark-800 rounded-lg shadow-lg overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-8 py-6">
+          <div class="flex justify-between items-start">
+            <div>
+              <h1 class="text-3xl font-bold text-white">{{ quote.quote_number }}</h1>
+              <p class="text-indigo-100 mt-1">{{ quote.project_type_detail?.name }}</p>
+            </div>
+            <span
+              :class="[
+                'px-4 py-2 rounded-full text-sm font-semibold',
+                getStatusClass(quote.status)
+              ]"
+            >
+              {{ quote.status_display }}
             </span>
           </div>
         </div>
 
-        <!-- Actions -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Actions</h2>
-          <div class="flex flex-wrap gap-3">
-            <button
-              @click="downloadPDF"
-              :disabled="downloadingPDF"
-              class="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              {{ downloadingPDF ? 'Téléchargement...' : 'Télécharger PDF' }}
-            </button>
-
-            <button
-              v-if="canSign"
-              @click="goToSignature"
-              class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-              Signer le devis
-            </button>
-
-            <button
-              v-if="quote.status === 'draft'"
-              @click="resendEmail"
-              :disabled="sendingEmail"
-              class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              {{ sendingEmail ? 'Envoi...' : 'Envoyer par email' }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Informations client -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informations client</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Nom du client</p>
-              <p class="text-gray-900 dark:text-white font-medium">{{ quote.client_name }}</p>
-            </div>
-            <div>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Email</p>
-              <p class="text-gray-900 dark:text-white font-medium">{{ quote.client_email }}</p>
-            </div>
-            <div v-if="quote.client_phone">
-              <p class="text-sm text-gray-600 dark:text-gray-400">Téléphone</p>
-              <p class="text-gray-900 dark:text-white font-medium">{{ quote.client_phone }}</p>
-            </div>
-            <div v-if="quote.client_company">
-              <p class="text-sm text-gray-600 dark:text-gray-400">Entreprise</p>
-              <p class="text-gray-900 dark:text-white font-medium">{{ quote.client_company }}</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Détails du projet -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Détails du projet</h2>
-          <div class="space-y-4">
-            <div v-if="quote.company_details">
-              <p class="text-sm text-gray-600 dark:text-gray-400">Type d'entreprise</p>
-              <p class="text-gray-900 dark:text-white font-medium">{{ quote.company_details.name }}</p>
-            </div>
-            <div v-if="quote.project_type_details">
-              <p class="text-sm text-gray-600 dark:text-gray-400">Type de projet</p>
-              <p class="text-gray-900 dark:text-white font-medium">{{ quote.project_type_details.name }}</p>
-            </div>
-            <div v-if="quote.description">
-              <p class="text-sm text-gray-600 dark:text-gray-400">Description</p>
-              <p class="text-gray-900 dark:text-white">{{ quote.description }}</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Options de design -->
-        <div v-if="quote.design_options && quote.design_options.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Options de design</h2>
-          <div class="space-y-3">
-            <div v-for="option in quote.design_options" :key="option.id" class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+        <!-- Content -->
+        <div class="px-8 py-6">
+          <!-- Informations Client -->
+          <section class="mb-8">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Informations Client
+            </h2>
+            <div class="grid md:grid-cols-2 gap-4">
               <div>
-                <p class="font-medium text-gray-900 dark:text-white">{{ option.name }}</p>
-                <p v-if="option.description" class="text-sm text-gray-600 dark:text-gray-400">{{ option.description }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Nom</p>
+                <p class="font-medium text-gray-900 dark:text-white">{{ quote.client_name }}</p>
               </div>
-              <span class="text-indigo-600 dark:text-indigo-400 font-semibold">{{ formatPrice(option.price) }} €</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Fonctionnalités -->
-        <div v-if="quote.features && quote.features.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Fonctionnalités</h2>
-          <div class="space-y-3">
-            <div v-for="feature in quote.features" :key="feature.id" class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div>
-                <p class="font-medium text-gray-900 dark:text-white">{{ feature.name }}</p>
-                <p v-if="feature.description" class="text-sm text-gray-600 dark:text-gray-400">{{ feature.description }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Email</p>
+                <p class="font-medium text-gray-900 dark:text-white">{{ quote.client_email }}</p>
               </div>
-              <span class="text-indigo-600 dark:text-indigo-400 font-semibold">{{ formatPrice(feature.price) }} €</span>
+              <div v-if="quote.client_phone">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Téléphone</p>
+                <p class="font-medium text-gray-900 dark:text-white">{{ quote.client_phone }}</p>
+              </div>
+              <div v-if="quote.company_name">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Entreprise</p>
+                <p class="font-medium text-gray-900 dark:text-white">{{ quote.company_name }}</p>
+              </div>
             </div>
-          </div>
-        </div>
+          </section>
 
-        <!-- Options supplémentaires -->
-        <div v-if="quote.supplementary_options && quote.supplementary_options.length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Options supplémentaires</h2>
-          <div class="space-y-3">
-            <div v-for="option in quote.supplementary_options" :key="option.id" class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <!-- Détails du Projet -->
+          <section class="mb-8">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Détails du Projet
+            </h2>
+            <div class="space-y-4">
               <div>
-                <p class="font-medium text-gray-900 dark:text-white">{{ option.name }}</p>
-                <p v-if="option.description" class="text-sm text-gray-600 dark:text-gray-400">{{ option.description }}</p>
-                <span class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ option.billing_type === 'one_time' ? 'Paiement unique' : 'Paiement mensuel' }}
+                <p class="text-sm text-gray-500 dark:text-gray-400">Type de projet</p>
+                <p class="font-medium text-gray-900 dark:text-white">
+                  {{ quote.project_type_detail?.name }}
+                </p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Option de design</p>
+                <p class="font-medium text-gray-900 dark:text-white">
+                  {{ quote.design_option_detail?.name }}
+                </p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Complexité</p>
+                <p class="font-medium text-gray-900 dark:text-white">
+                  {{ quote.complexity_level_detail?.name }}
+                </p>
+              </div>
+              <div v-if="quote.project_description">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Description</p>
+                <p class="font-medium text-gray-900 dark:text-white">
+                  {{ quote.project_description }}
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Options Supplémentaires -->
+          <section v-if="quote.supplementary_options_detail?.length > 0" class="mb-8">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Options Supplémentaires
+            </h2>
+            <ul class="space-y-2">
+              <li
+                v-for="option in quote.supplementary_options_detail"
+                :key="option.id"
+                class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700"
+              >
+                <span class="text-gray-900 dark:text-white">{{ option.name }}</span>
+                <span class="font-medium text-gray-900 dark:text-white">
+                  {{ option.price }} €
+                </span>
+              </li>
+            </ul>
+          </section>
+
+          <!-- Détails Financiers -->
+          <section class="mb-8">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Détails Financiers
+            </h2>
+            <div class="bg-gray-50 dark:bg-dark-700 rounded-lg p-6 space-y-3">
+              <div class="flex justify-between">
+                <span class="text-gray-600 dark:text-gray-300">Sous-total HT</span>
+                <span class="font-medium text-gray-900 dark:text-white">
+                  {{ quote.subtotal_ht }} €
                 </span>
               </div>
-              <span class="text-indigo-600 dark:text-indigo-400 font-semibold">
-                {{ formatPrice(option.price) }} €{{ option.billing_type === 'monthly' ? '/mois' : '' }}
-              </span>
+              <div v-if="quote.discount_amount > 0" class="flex justify-between text-green-600">
+                <span>Remise {{ quote.discount_reason ? `(${quote.discount_reason})` : '' }}</span>
+                <span>- {{ quote.discount_amount }} €</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600 dark:text-gray-300">TVA ({{ quote.tva_rate }}%)</span>
+                <span class="font-medium text-gray-900 dark:text-white">
+                  {{ quote.tva_amount }} €
+                </span>
+              </div>
+              <div class="flex justify-between text-lg font-bold border-t border-gray-300 dark:border-gray-600 pt-3">
+                <span class="text-gray-900 dark:text-white">Total TTC</span>
+                <span class="text-indigo-600 dark:text-indigo-400">
+                  {{ quote.total_ttc }} €
+                </span>
+              </div>
             </div>
-          </div>
-        </div>
+          </section>
 
-        <!-- Tarification -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tarification</h2>
-          <div class="space-y-3">
-            <div class="flex justify-between text-gray-700 dark:text-gray-300">
-              <span>Sous-total HT</span>
-              <span>{{ formatPrice(quote.subtotal_ht) }} €</span>
+          <!-- Paiements -->
+          <section class="mb-8">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Échéancier de Paiement
+            </h2>
+            <div class="grid md:grid-cols-3 gap-4">
+              <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4">
+                <p class="text-sm text-indigo-600 dark:text-indigo-400 mb-1">Acompte (30%)</p>
+                <p class="text-2xl font-bold text-indigo-700 dark:text-indigo-300">
+                  {{ quote.payment_first }} €
+                </p>
+              </div>
+              <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4">
+                <p class="text-sm text-indigo-600 dark:text-indigo-400 mb-1">2ème paiement (40%)</p>
+                <p class="text-2xl font-bold text-indigo-700 dark:text-indigo-300">
+                  {{ quote.payment_second }} €
+                </p>
+              </div>
+              <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4">
+                <p class="text-sm text-indigo-600 dark:text-indigo-400 mb-1">Solde (30%)</p>
+                <p class="text-2xl font-bold text-indigo-700 dark:text-indigo-300">
+                  {{ quote.payment_final }} €
+                </p>
+              </div>
             </div>
-            <div v-if="quote.discount_percentage > 0" class="flex justify-between text-green-600 dark:text-green-400">
-              <span>Remise ({{ quote.discount_percentage }}%)</span>
-              <span>- {{ formatPrice(quote.discount_amount) }} €</span>
-            </div>
-            <div class="flex justify-between text-gray-700 dark:text-gray-300">
-              <span>Total HT</span>
-              <span>{{ formatPrice(quote.total_ht) }} €</span>
-            </div>
-            <div class="flex justify-between text-gray-700 dark:text-gray-300">
-              <span>TVA ({{ quote.tax_percentage }}%)</span>
-              <span>{{ formatPrice(quote.tax_amount) }} €</span>
-            </div>
-            <div class="flex justify-between text-xl font-bold text-gray-900 dark:text-white pt-3 border-t border-gray-200 dark:border-gray-700">
-              <span>Total TTC</span>
-              <span>{{ formatPrice(quote.total_ttc) }} €</span>
-            </div>
-            <div v-if="quote.monthly_subscription_total > 0" class="flex justify-between text-indigo-600 dark:text-indigo-400 pt-2 border-t border-gray-200 dark:border-gray-700">
-              <span>Abonnement mensuel</span>
-              <span>{{ formatPrice(quote.monthly_subscription_total) }} € /mois</span>
-            </div>
-          </div>
-        </div>
+          </section>
 
-        <!-- Dates importantes -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Dates importantes</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p class="text-sm text-gray-600 dark:text-gray-400">Date de validité</p>
-              <p class="text-gray-900 dark:text-white font-medium">{{ formatDate(quote.valid_until) }}</p>
-              <p v-if="isExpired" class="text-red-600 text-sm mt-1">Expiré</p>
-              <p v-else-if="expiresInDays <= 7" class="text-orange-600 text-sm mt-1">Expire dans {{ expiresInDays }} jour(s)</p>
+          <!-- Signature (si signé) -->
+          <section v-if="quote.signed_at" class="mb-8">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Signature
+            </h2>
+            <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
+              <div class="flex items-center mb-4">
+                <svg class="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="text-green-700 dark:text-green-300 font-medium">
+                  Devis signé le {{ formatDate(quote.signed_at) }}
+                </span>
+              </div>
+              <p class="text-gray-700 dark:text-gray-300">
+                Signé par: <strong>{{ quote.signer_name }}</strong>
+              </p>
+              <img
+                v-if="quote.signature_image"
+                :src="quote.signature_image"
+                alt="Signature"
+                class="mt-4 border border-gray-300 dark:border-gray-600 rounded p-2 bg-white max-w-xs"
+              />
             </div>
-            <div v-if="quote.signed_at">
-              <p class="text-sm text-gray-600 dark:text-gray-400">Signé le</p>
-              <p class="text-gray-900 dark:text-white font-medium">{{ formatDate(quote.signed_at) }}</p>
-            </div>
-          </div>
-        </div>
+          </section>
 
-        <!-- Signature (si signé) -->
-        <div v-if="quote.signed_at && quote.signature_image" class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Signature</h2>
-          <div class="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-900">
-            <img :src="quote.signature_image" alt="Signature" class="max-w-md mx-auto" />
-            <p class="text-center text-sm text-gray-600 dark:text-gray-400 mt-2">
-              Signé par {{ quote.signature_name }} le {{ formatDate(quote.signed_at) }}
-            </p>
+          <!-- Dates -->
+          <section class="mb-8">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Dates Importantes
+            </h2>
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Créé le</p>
+                <p class="font-medium text-gray-900 dark:text-white">
+                  {{ formatDate(quote.created_at) }}
+                </p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Expire le</p>
+                <p class="font-medium text-gray-900 dark:text-white">
+                  {{ formatDate(quote.expires_at) }}
+                </p>
+              </div>
+              <div v-if="quote.estimated_start_date">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Début estimé</p>
+                <p class="font-medium text-gray-900 dark:text-white">
+                  {{ formatDate(quote.estimated_start_date) }}
+                </p>
+              </div>
+              <div v-if="quote.estimated_duration_days">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Durée estimée</p>
+                <p class="font-medium text-gray-900 dark:text-white">
+                  {{ quote.estimated_duration_days }} jours
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Actions -->
+          <div class="flex flex-wrap gap-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+            <button
+              @click="downloadPdf"
+              class="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+            >
+              Télécharger PDF
+            </button>
+            <button
+              v-if="quote.status === 'sent' && !quote.is_expired"
+              @click="goToSignature"
+              class="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+            >
+              Signer le devis
+            </button>
+            <button
+              @click="resendEmail"
+              class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+            >
+              Renvoyer par email
+            </button>
+            <button
+              @click="$router.push('/mes-devis')"
+              class="px-6 py-3 bg-gray-200 dark:bg-dark-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-dark-600 transition-colors font-medium"
+            >
+              Retour
+            </button>
           </div>
         </div>
       </div>
@@ -233,61 +257,35 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getQuoteById, downloadQuotePDF, sendQuoteEmail } from '@/api/quotes'
-import { useToastStore } from '@/stores/toast'
+import { getQuote, downloadPDF, sendEmail } from '../api/quotes'
+import { useToastStore } from '../stores/toast'
 
 const route = useRoute()
 const router = useRouter()
-const toast = useToastStore()
+const toastStore = useToastStore()
 
 const quote = ref(null)
-const loading = ref(true)
-const error = ref(null)
-const downloadingPDF = ref(false)
-const sendingEmail = ref(false)
+const loading = ref(false)
 
-// Computed
-const canSign = computed(() => {
-  return quote.value && ['sent', 'viewed'].includes(quote.value.status) && !isExpired.value
-})
-
-const isExpired = computed(() => {
-  if (!quote.value) return false
-  return new Date(quote.value.valid_until) < new Date()
-})
-
-const expiresInDays = computed(() => {
-  if (!quote.value) return 0
-  const validUntil = new Date(quote.value.valid_until)
-  const today = new Date()
-  const diffTime = validUntil - today
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  return diffDays
-})
-
-// Methods
 const fetchQuote = async () => {
+  loading.value = true
   try {
-    loading.value = true
-    error.value = null
-    const response = await getQuoteById(route.params.id)
+    const response = await getQuote(route.params.id)
     quote.value = response.data
-  } catch (err) {
-    console.error('Erreur lors de la récupération du devis:', err)
-    error.value = err.response?.data?.detail || 'Impossible de charger le devis'
-    toast.error('Erreur', error.value)
+  } catch (error) {
+    console.error('Erreur chargement devis:', error)
+    toastStore.addToast('Erreur lors du chargement du devis', 'error')
+    router.push('/mes-devis')
   } finally {
     loading.value = false
   }
 }
 
-const downloadPDF = async () => {
+const downloadPdf = async () => {
   try {
-    downloadingPDF.value = true
-    const response = await downloadQuotePDF(quote.value.id)
-    
+    const response = await downloadPDF(route.params.id)
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
     link.href = url
@@ -295,85 +293,51 @@ const downloadPDF = async () => {
     document.body.appendChild(link)
     link.click()
     link.remove()
-    window.URL.revokeObjectURL(url)
-    
-    toast.success('Téléchargement réussi', 'Le PDF a été téléchargé')
-  } catch (err) {
-    console.error('Erreur lors du téléchargement:', err)
-    toast.error('Erreur', 'Impossible de télécharger le PDF')
-  } finally {
-    downloadingPDF.value = false
+    toastStore.addToast('PDF téléchargé avec succès', 'success')
+  } catch (error) {
+    console.error('Erreur téléchargement PDF:', error)
+    toastStore.addToast('Erreur lors du téléchargement du PDF', 'error')
   }
-}
-
-const goToSignature = () => {
-  router.push(`/signature/${quote.value.public_token}`)
 }
 
 const resendEmail = async () => {
   try {
-    sendingEmail.value = true
-    await sendQuoteEmail(quote.value.id)
-    toast.success('Email envoyé', 'Le devis a été envoyé par email')
-  } catch (err) {
-    console.error('Erreur lors de l\'envoi:', err)
-    toast.error('Erreur', 'Impossible d\'envoyer l\'email')
-  } finally {
-    sendingEmail.value = false
+    await sendEmail(route.params.id)
+    toastStore.addToast('Email envoyé avec succès', 'success')
+  } catch (error) {
+    console.error('Erreur envoi email:', error)
+    toastStore.addToast('Erreur lors de l\'envoi de l\'email', 'error')
   }
+}
+
+const goToSignature = () => {
+  router.push(`/signature/${quote.value.signature_token}`)
+}
+
+const getStatusClass = (status) => {
+  const classes = {
+    draft: 'bg-gray-100 text-gray-800',
+    sent: 'bg-blue-100 text-blue-800',
+    viewed: 'bg-purple-100 text-purple-800',
+    accepted: 'bg-green-100 text-green-800',
+    rejected: 'bg-red-100 text-red-800',
+    expired: 'bg-orange-100 text-orange-800'
+  }
+  return classes[status] || 'bg-gray-100 text-gray-800'
 }
 
 const formatDate = (dateString) => {
-  if (!dateString) return '-'
   const date = new Date(dateString)
-  return new Intl.DateTimeFormat('fr-FR', {
+  return date.toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
     year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  }).format(date)
-}
-
-const formatPrice = (price) => {
-  if (!price) return '0.00'
-  return parseFloat(price).toFixed(2)
-}
-
-const getStatusLabel = (status) => {
-  const labels = {
-    'draft': 'Brouillon',
-    'sent': 'Envoyé',
-    'viewed': 'Consulté',
-    'accepted': 'Accepté',
-    'rejected': 'Refusé',
-    'expired': 'Expiré'
-  }
-  return labels[status] || status
-}
-
-const getStatusBadgeClass = (status) => {
-  const classes = {
-    'draft': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-    'sent': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-    'viewed': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-    'accepted': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-    'rejected': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-    'expired': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
-  }
-  return classes[status] || classes.draft
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 onMounted(() => {
   fetchQuote()
 })
 </script>
-
-<style scoped>
-.devis-detail-container {
-  min-height: calc(100vh - 64px);
-  background-color: #f9fafb;
-}
-
-.dark .devis-detail-container {
-  background-color: #111827;
-}
-</style>
