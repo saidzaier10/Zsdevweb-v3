@@ -4,16 +4,15 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.utils import timezone
-from django.db.models import Q, Count, Sum
+from django.db.models import Sum
 from decimal import Decimal
 
 from .models import (
     Company,
     ProjectType,
     DesignOption,
-    Feature,
     ComplexityLevel,
     SupplementaryOption,
     Quote
@@ -22,7 +21,6 @@ from .serializers import (
     CompanySerializer,
     ProjectTypeSerializer,
     DesignOptionSerializer,
-    FeatureSerializer,
     ComplexityLevelSerializer,
     SupplementaryOptionSerializer,
     QuoteSerializer,
@@ -43,7 +41,7 @@ class CompanyViewSet(viewsets.ReadOnlyModelViewSet):
     API endpoint pour les types d'entreprises.
     Lecture seule pour tout le monde.
     """
-    queryset = Company.objects.filter(is_active=True)
+    queryset = Company.objects.all()
     serializer_class = CompanySerializer
     permission_classes = [AllowAny]
 
@@ -65,16 +63,6 @@ class DesignOptionViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = DesignOption.objects.filter(is_active=True)
     serializer_class = DesignOptionSerializer
-    permission_classes = [AllowAny]
-
-
-class FeatureViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API endpoint pour les fonctionnalités.
-    Lecture seule pour tout le monde.
-    """
-    queryset = Feature.objects.filter(is_active=True)
-    serializer_class = FeatureSerializer
     permission_classes = [AllowAny]
 
 
@@ -106,18 +94,16 @@ class QuoteViewSet(viewsets.ModelViewSet):
     - Actions publiques : public (GET par token), sign (POST signature)
     """
     queryset = Quote.objects.all().select_related(
-        'company',
         'project_type',
+        'design_option',
         'complexity_level'
     ).prefetch_related(
-        'design_options',
-        'features',
         'supplementary_options'
     )
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status', 'company', 'project_type']
-    search_fields = ['quote_number', 'client_name', 'client_email', 'client_company']
+    filterset_fields = ['status', 'project_type']
+    search_fields = ['quote_number', 'client_name', 'client_email', 'company_name']
     ordering_fields = ['created_at', 'valid_until', 'total_ttc']
     ordering = ['-created_at']
 
@@ -264,8 +250,6 @@ class QuoteViewSet(viewsets.ModelViewSet):
         quote_copy.save()
         
         # Copier les relations ManyToMany
-        quote_copy.design_options.set(original_quote.design_options.all())
-        quote_copy.features.set(original_quote.features.all())
         quote_copy.supplementary_options.set(original_quote.supplementary_options.all())
         
         serializer = QuoteDetailSerializer(quote_copy)
@@ -294,8 +278,6 @@ class QuoteViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def statistics(self, request):
         """Obtenir les statistiques sur les devis"""
-        from django.db.models import Count, Sum, Q
-        
         queryset = self.get_queryset()
         
         stats = {
