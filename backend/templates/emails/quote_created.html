@@ -1,43 +1,120 @@
 {% extends "emails/base_email.html" %}
 
-{% block title %}Votre devis - Zsdevweb{% endblock %}
+{% block title %}Votre devis {{ quote.quote_number }} - ZsDevWeb{% endblock %}
 
 {% block content %}
-<h2>Bonjour {{ quote.client_name }},</h2>
+<tr>
+  <td style="padding: 40px 30px;">
+    <h1 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">
+      Votre devis est prêt !
+    </h1>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
+      Bonjour <strong>{{ quote.client_name }}</strong>,
+    </p>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
+      Merci pour votre demande de devis. Nous avons le plaisir de vous faire parvenir votre devis personnalisé pour votre projet de développement web.
+    </p>
+    
+    <!-- Informations du devis -->
+    <table style="width: 100%; background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+      <tr>
+        <td style="padding: 10px;">
+          <table style="width: 100%;">
+            <tr>
+              <td style="color: #6b7280; font-size: 14px; padding: 5px 0;">Numéro de devis:</td>
+              <td style="color: #1f2937; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.quote_number }}</td>
+            </tr>
+            <tr>
+              <td style="color: #6b7280; font-size: 14px; padding: 5px 0;">Date de création:</td>
+              <td style="color: #1f2937; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.created_at|date:"d/m/Y" }}</td>
+            </tr>
+            <tr>
+              <td style="color: #6b7280; font-size: 14px; padding: 5px 0;">Valide jusqu'au:</td>
+              <td style="color: #1f2937; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.valid_until|date:"d/m/Y" }}</td>
+            </tr>
+            <tr>
+              <td style="color: #6b7280; font-size: 14px; padding: 5px 0; border-top: 2px solid #e5e7eb; padding-top: 15px;">Montant total TTC:</td>
+              <td style="color: #4f46e5; font-size: 20px; font-weight: 700; text-align: right; padding: 5px 0; border-top: 2px solid #e5e7eb; padding-top: 15px;">{{ quote.total_ttc }} €</td>
+            </tr>
+            {% if quote.monthly_subscription_total > 0 %}
+            <tr>
+              <td style="color: #6b7280; font-size: 14px; padding: 5px 0;">Abonnement mensuel:</td>
+              <td style="color: #4f46e5; font-size: 16px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.monthly_subscription_total }} €/mois</td>
+            </tr>
+            {% endif %}
+          </table>
+        </td>
+      </tr>
+    </table>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 30px;">
+      Vous pouvez consulter le détail complet de votre devis et le signer en ligne en cliquant sur le bouton ci-dessous :
+    </p>
+    
+    <!-- Boutons d'action -->
+    <table style="width: 100%; margin-bottom: 30px;">
+      <tr>
+        <td align="center">
+          <a href="{{ quote_url }}" style="display: inline-block; padding: 14px 32px; background-color: #4f46e5; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; margin-bottom: 10px;">
+            Consulter et signer mon devis
+          </a>
+        </td>
+      </tr>
+    </table>
+    
+    <!-- Récapitulatif du projet -->
+    {% if quote.project_type_details or quote.description %}
+    <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin-bottom: 30px; border-radius: 4px;">
+      <h3 style="color: #1e40af; font-size: 16px; margin: 0 0 10px 0; font-weight: 600;">Votre projet</h3>
+      {% if quote.project_type_details %}
+      <p style="color: #1e40af; font-size: 14px; margin: 5px 0;">
+        <strong>Type:</strong> {{ quote.project_type_details.name }}
+      </p>
+      {% endif %}
+      {% if quote.description %}
+      <p style="color: #1e40af; font-size: 14px; margin: 5px 0;">
+        <strong>Description:</strong> {{ quote.description }}
+      </p>
+      {% endif %}
+    </div>
+    {% endif %}
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
+      <strong>Prochaines étapes :</strong>
+    </p>
+    
+    <ol style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 30px; padding-left: 20px;">
+      <li style="margin-bottom: 10px;">Consultez le détail de votre devis en ligne</li>
+      <li style="margin-bottom: 10px;">Si vous êtes d'accord, signez-le électroniquement</li>
+      <li style="margin-bottom: 10px;">Nous démarrerons votre projet dès réception de votre signature</li>
+    </ol>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
+      Des questions ? N'hésitez pas à nous contacter, nous sommes là pour vous accompagner !
+    </p>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 10px;">
+      Cordialement,
+    </p>
+    
+    <p style="color: #1f2937; font-size: 16px; font-weight: 600; margin-bottom: 5px;">
+      L'équipe ZsDevWeb
+    </p>
+    
+    <p style="color: #6b7280; font-size: 14px; margin-bottom: 0;">
+      Développement Web & Solutions Digitales
+    </p>
+  </td>
+</tr>
 
-<p>Nous avons bien reçu votre demande de devis <strong>#{{ quote.quote_number }}</strong>.</p>
-
-<div class="info-box">
-    <p><strong>📋 Récapitulatif de votre projet :</strong></p>
-    <ul style="margin: 10px 0; padding-left: 20px;">
-        <li><strong>Type :</strong> {{ quote.project_type.name }}</li>
-        <li><strong>Design :</strong> {{ quote.design_option.name }}</li>
-        <li><strong>Complexité :</strong> {{ quote.complexity_level.name }}</li>
-        <li><strong>Montant total :</strong> {{ quote.total_ttc }} € TTC</li>
-    </ul>
-</div>
-
-<p>Vous pouvez consulter votre devis détaillé en cliquant sur le bouton ci-dessous :</p>
-
-<div style="text-align: center;">
-    <a href="{{ quote_url }}" class="button">📄 Consulter mon devis</a>
-</div>
-
-<div class="divider"></div>
-
-<p><strong>Prochaines étapes :</strong></p>
-<ol>
-    <li>Consultez votre devis en ligne</li>
-    <li>Signez électroniquement si vous acceptez</li>
-    <li>Nous commençons le projet dès réception !</li>
-</ol>
-
-<p>Ce devis est valable <strong>30 jours</strong> à compter de sa création.</p>
-
-<p>Si vous avez des questions, n'hésitez pas à nous contacter.</p>
-
-<p>
-    Cordialement,<br>
-    <strong>L'équipe Zsdevweb</strong>
-</p>
+<!-- Section d'aide -->
+<tr>
+  <td style="padding: 20px 30px; background-color: #fef3c7; border-top: 1px solid #fde68a;">
+    <p style="color: #92400e; font-size: 14px; line-height: 20px; margin: 0; text-align: center;">
+      ⚠️ Ce devis est valable jusqu'au <strong>{{ quote.valid_until|date:"d/m/Y" }}</strong>. Pensez à le signer avant cette date !
+    </p>
+  </td>
+</tr>
 {% endblock %}

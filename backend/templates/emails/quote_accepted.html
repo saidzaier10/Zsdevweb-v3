@@ -1,38 +1,125 @@
 {% extends "emails/base_email.html" %}
 
-{% block title %}Devis accepté - Zsdevweb{% endblock %}
+{% block title %}Confirmation de signature - {{ quote.quote_number }} - ZsDevWeb{% endblock %}
 
 {% block content %}
-<h2>🎉 Félicitations {{ quote.client_name }} !</h2>
+<tr>
+  <td style="padding: 40px 30px;">
+    <!-- Icône de succès -->
+    <table style="width: 100%; margin-bottom: 20px;">
+      <tr>
+        <td align="center">
+          <div style="width: 80px; height: 80px; background-color: #d1fae5; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+            <span style="font-size: 40px; color: #10b981;">✓</span>
+          </div>
+        </td>
+      </tr>
+    </table>
+    
+    <h1 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600; text-align: center;">
+      Devis signé avec succès !
+    </h1>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
+      Bonjour <strong>{{ quote.client_name }}</strong>,
+    </p>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
+      Nous vous confirmons la bonne réception de votre signature pour le devis <strong>{{ quote.quote_number }}</strong>.
+    </p>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 30px;">
+      Merci pour votre confiance ! Nous sommes ravis de démarrer ce projet avec vous.
+    </p>
+    
+    <!-- Informations du devis -->
+    <table style="width: 100%; background-color: #f0fdf4; border-radius: 8px; padding: 20px; margin-bottom: 30px; border: 2px solid #86efac;">
+      <tr>
+        <td style="padding: 10px;">
+          <table style="width: 100%;">
+            <tr>
+              <td style="color: #15803d; font-size: 14px; padding: 5px 0;">Numéro de devis:</td>
+              <td style="color: #166534; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.quote_number }}</td>
+            </tr>
+            <tr>
+              <td style="color: #15803d; font-size: 14px; padding: 5px 0;">Signé le:</td>
+              <td style="color: #166534; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.signed_at|date:"d/m/Y à H:i" }}</td>
+            </tr>
+            <tr>
+              <td style="color: #15803d; font-size: 14px; padding: 5px 0;">Signé par:</td>
+              <td style="color: #166534; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.signature_name }}</td>
+            </tr>
+            <tr>
+              <td style="color: #15803d; font-size: 14px; padding: 5px 0; border-top: 2px solid #86efac; padding-top: 15px;">Montant total TTC:</td>
+              <td style="color: #10b981; font-size: 20px; font-weight: 700; text-align: right; padding: 5px 0; border-top: 2px solid #86efac; padding-top: 15px;">{{ quote.total_ttc }} €</td>
+            </tr>
+            {% if quote.monthly_subscription_total > 0 %}
+            <tr>
+              <td style="color: #15803d; font-size: 14px; padding: 5px 0;">Abonnement mensuel:</td>
+              <td style="color: #10b981; font-size: 16px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.monthly_subscription_total }} €/mois</td>
+            </tr>
+            {% endif %}
+          </table>
+        </td>
+      </tr>
+    </table>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
+      <strong>Prochaines étapes :</strong>
+    </p>
+    
+    <ol style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 30px; padding-left: 20px;">
+      <li style="margin-bottom: 10px;"><strong>Aujourd'hui :</strong> Vous recevez cette confirmation par email</li>
+      <li style="margin-bottom: 10px;"><strong>Dans les 24h :</strong> Notre équipe vous contactera pour planifier le démarrage du projet</li>
+      <li style="margin-bottom: 10px;"><strong>Début du projet :</strong> Nous commencerons à travailler sur votre projet selon le calendrier convenu</li>
+      <li style="margin-bottom: 10px;"><strong>Suivi régulier :</strong> Vous recevrez des mises à jour régulières sur l'avancement</li>
+    </ol>
+    
+    <!-- Informations de paiement -->
+    <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin-bottom: 30px; border-radius: 4px;">
+      <h3 style="color: #1e40af; font-size: 16px; margin: 0 0 10px 0; font-weight: 600;">💳 Informations de paiement</h3>
+      <p style="color: #1e40af; font-size: 14px; margin: 5px 0; line-height: 22px;">
+        Un email séparé contenant les modalités de paiement et la facture vous sera envoyé dans les prochaines heures. 
+        Si vous avez des questions concernant le paiement, n'hésitez pas à nous contacter.
+      </p>
+    </div>
+    
+    <!-- Contact -->
+    <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+      <h3 style="color: #1f2937; font-size: 16px; margin: 0 0 10px 0; font-weight: 600;">📞 Votre contact dédié</h3>
+      <p style="color: #4b5563; font-size: 14px; margin: 5px 0; line-height: 22px;">
+        Pour toute question concernant votre projet, vous pouvez nous joindre :
+      </p>
+      <ul style="color: #4b5563; font-size: 14px; margin: 10px 0; padding-left: 20px; line-height: 22px;">
+        <li>Email : <a href="mailto:contact@zsdevweb.com" style="color: #4f46e5; text-decoration: none;">contact@zsdevweb.com</a></li>
+        <li>Réponse sous 24h maximum</li>
+      </ul>
+    </div>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
+      Nous sommes impatients de transformer votre vision en réalité !
+    </p>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 10px;">
+      Cordialement,
+    </p>
+    
+    <p style="color: #1f2937; font-size: 16px; font-weight: 600; margin-bottom: 5px;">
+      L'équipe ZsDevWeb
+    </p>
+    
+    <p style="color: #6b7280; font-size: 14px; margin-bottom: 0;">
+      Développement Web & Solutions Digitales
+    </p>
+  </td>
+</tr>
 
-<p>Votre devis <strong>#{{ quote.quote_number }}</strong> a été signé avec succès !</p>
-
-<div class="info-box" style="border-left-color: #10b981;">
-    <p><strong>✅ Votre projet est confirmé :</strong></p>
-    <ul style="margin: 10px 0; padding-left: 20px;">
-        <li><strong>Montant :</strong> {{ quote.total_ttc }} € TTC</li>
-        <li><strong>Durée estimée :</strong> {{ quote.estimated_duration_days }} jours</li>
-        <li><strong>Date de début :</strong> {{ quote.estimated_start_date|default:"À définir" }}</li>
-    </ul>
-</div>
-
-<p><strong>📋 Modalités de paiement :</strong></p>
-<ol>
-    <li><strong>1er paiement (30%) :</strong> {{ quote.payment_first }} € - À la signature</li>
-    <li><strong>2ème paiement (40%) :</strong> {{ quote.payment_second }} € - Mi-projet</li>
-    <li><strong>Solde (30%) :</strong> {{ quote.payment_final }} € - À la livraison</li>
-</ol>
-
-<p>Nous allons vous recontacter dans les plus brefs délais pour planifier le démarrage du projet.</p>
-
-<div style="text-align: center; margin: 30px 0;">
-    <a href="{{ quote_url }}" class="button">📄 Voir mon devis signé</a>
-</div>
-
-<p>Merci de votre confiance !</p>
-
-<p>
-    Cordialement,<br>
-    <strong>L'équipe Zsdevweb</strong>
-</p>
+<!-- Section de remerciement -->
+<tr>
+  <td style="padding: 20px 30px; background-color: #d1fae5; border-top: 1px solid #86efac;">
+    <p style="color: #065f46; font-size: 14px; line-height: 20px; margin: 0; text-align: center;">
+      🎉 Merci de nous faire confiance pour votre projet ! Ensemble, créons quelque chose d'exceptionnel.
+    </p>
+  </td>
+</tr>
 {% endblock %}

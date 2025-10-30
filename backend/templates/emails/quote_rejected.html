@@ -1,0 +1,91 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<tr>
+  <td style="padding: 40px 30px;">
+    <h1 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">
+      Notification de refus de devis
+    </h1>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
+      Bonjour,
+    </p>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
+      Nous accusons réception de votre refus concernant le devis <strong>{{ quote.quote_number }}</strong>.
+    </p>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 30px;">
+      Nous regrettons que notre proposition n'ait pas répondu à vos attentes. Nous serions ravis de comprendre les raisons de votre décision afin d'améliorer nos services.
+    </p>
+    
+    <!-- Informations du devis -->
+    <table style="width: 100%; background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+      <tr>
+        <td style="padding: 10px;">
+          <table style="width: 100%;">
+            <tr>
+              <td style="color: #6b7280; font-size: 14px; padding: 5px 0;">Numéro de devis:</td>
+              <td style="color: #1f2937; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.quote_number }}</td>
+            </tr>
+            <tr>
+              <td style="color: #6b7280; font-size: 14px; padding: 5px 0;">Date de création:</td>
+              <td style="color: #1f2937; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.created_at|date:"d/m/Y" }}</td>
+            </tr>
+            <tr>
+              <td style="color: #6b7280; font-size: 14px; padding: 5px 0;">Montant total TTC:</td>
+              <td style="color: #1f2937; font-size: 14px; font-weight: 600; text-align: right; padding: 5px 0;">{{ quote.total_ttc }} €</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
+      Si vous le souhaitez, nous restons à votre disposition pour :
+    </p>
+    
+    <ul style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 30px; padding-left: 20px;">
+      <li style="margin-bottom: 10px;">Discuter de vos besoins et ajuster notre proposition</li>
+      <li style="margin-bottom: 10px;">Vous proposer des alternatives plus adaptées à votre budget</li>
+      <li style="margin-bottom: 10px;">Répondre à vos questions ou préoccupations</li>
+    </ul>
+    
+    <!-- Bouton de contact -->
+    <table style="width: 100%; margin-bottom: 30px;">
+      <tr>
+        <td align="center">
+          <a href="mailto:contact@zsdevweb.com" style="display: inline-block; padding: 14px 32px; background-color: #4f46e5; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            Nous contacter
+          </a>
+        </td>
+      </tr>
+    </table>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 20px;">
+      Nous espérons avoir l'opportunité de collaborer avec vous à l'avenir.
+    </p>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 10px;">
+      Cordialement,
+    </p>
+    
+    <p style="color: #1f2937; font-size: 16px; font-weight: 600; margin-bottom: 5px;">
+      L'équipe ZsDevWeb
+    </p>
+    
+    <p style="color: #6b7280; font-size: 14px; margin-bottom: 0;">
+      Développement Web & Solutions Digitales
+    </p>
+  </td>
+</tr>
+
+<!-- Section d'aide -->
+<tr>
+  <td style="padding: 20px 30px; background-color: #eff6ff; border-top: 1px solid #dbeafe;">
+    <p style="color: #3b82f6; font-size: 14px; line-height: 20px; margin: 0; text-align: center;">
+      💡 Nous sommes là pour vous aider ! N'hésitez pas à nous faire part de vos retours.
+    </p>
+  </td>
+</tr>
+{% endblock %}
