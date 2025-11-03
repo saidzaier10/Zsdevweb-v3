@@ -86,17 +86,27 @@ class QuoteTemplateSerializer(serializers.ModelSerializer):
 
 class QuoteListSerializer(serializers.ModelSerializer):
     """Serializer simplifié pour la liste des devis"""
-    
+
+    # Relations en objets complets pour le frontend
+    project_type = ProjectTypeSerializer(read_only=True)
+    design_option = DesignOptionSerializer(read_only=True)
+    complexity_level = ComplexityLevelSerializer(read_only=True)
+    supplementary_options = SupplementaryOptionSerializer(many=True, read_only=True)
+
+    # Champs calculés
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     project_type_name = serializers.CharField(source='project_type.name', read_only=True)
     is_expired = serializers.BooleanField(read_only=True)
-    
+    total_price = serializers.DecimalField(source='total_ttc', max_digits=10, decimal_places=2, read_only=True)
+
     class Meta:
         model = Quote
         fields = [
             'id', 'quote_number', 'client_name', 'client_email',
-            'company_name', 'project_type_name', 'status', 'status_display',
-            'total_ttc', 'is_expired', 'created_at', 'expires_at'
+            'company_name', 'project_type', 'project_type_name',
+            'design_option', 'complexity_level', 'supplementary_options',
+            'status', 'status_display', 'total_ttc', 'total_price',
+            'is_expired', 'created_at', 'expires_at', 'signature_token'
         ]
 
 
