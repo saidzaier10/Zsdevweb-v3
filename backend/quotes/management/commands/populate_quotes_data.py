@@ -1,5 +1,5 @@
 """
-Commande pour peupler la base de données avec des données de test
+Commande pour peupler la base de données Quotes avec des données de test
 """
 from django.core.management.base import BaseCommand
 from quotes.models import (
@@ -10,242 +10,469 @@ from quotes.models import (
     SupplementaryOption,
     QuoteTemplate
 )
+from decimal import Decimal
 
 
 class Command(BaseCommand):
-    help = 'Peuple la base de données avec des données de test pour les devis'
+    help = 'Peuple la base de données avec des données de test pour les Devis'
 
     def handle(self, *args, **kwargs):
-        self.stdout.write(self.style.SUCCESS('🚀 Début du peuplement de la base de données...'))
-        
-        # 1. Créer/Mettre à jour l'entreprise
-        company, created = Company.objects.get_or_create(id=1)
-        company.name = "ZSdevweb"
+        self.stdout.write(self.style.SUCCESS('🚀 Début du peuplement de la base de données Quotes...'))
+
+        # 1. Créer ou mettre à jour les informations de l'entreprise
+        company = Company.get_instance()
+        company.name = "Zsdevweb"
         company.email = "contact@zsdevweb.com"
         company.phone = "+33 6 12 34 56 78"
-        company.address = "123 Rue du Code\n75001 Paris, France"
-        company.siret = "12345678900014"
-        company.tva_number = "FR12345678900"
+        company.address = "123 Rue de la Tech\n75001 Paris, France"
+        company.siret = "12345678901234"
+        company.tva_number = "FR12345678901"
         company.primary_color = "#1a56db"
-        company.footer_text = "Merci de votre confiance | www.zsdevweb.com | contact@zsdevweb.com"
-        company.email_signature = "Cordialement,\nL'équipe ZSdevweb\n\n📧 contact@zsdevweb.com\n📱 +33 6 12 34 56 78"
+        company.footer_text = "Merci de votre confiance | www.zsdevweb.com"
+        company.email_signature = "Cordialement,\nL'équipe Zsdevweb"
         company.save()
-        self.stdout.write(self.style.SUCCESS('✓ Entreprise configurée'))
-        
-        # 2. Types de projets
-        project_types = [
+        self.stdout.write(f'  ✓ Entreprise "{company.name}" configurée')
+
+        self.stdout.write(self.style.SUCCESS('\n✅ Entreprise configurée\n'))
+
+        # 2. Créer les Types de Projets
+        project_types_data = [
             {
                 'name': 'Site Vitrine',
-                'description': 'Site web de présentation pour entreprise ou professionnel',
-                'base_price': 1500.00,
-                'estimated_days': 10
+                'description': 'Site web vitrine pour présenter votre entreprise, vos services et votre expertise. Idéal pour les PME, artisans et professions libérales.',
+                'base_price': Decimal('2500.00'),
+                'estimated_days': 10,
             },
             {
-                'name': 'Site E-commerce',
-                'description': 'Boutique en ligne avec paiement sécurisé',
-                'base_price': 3500.00,
-                'estimated_days': 20
+                'name': 'E-commerce',
+                'description': 'Boutique en ligne complète avec gestion des produits, panier, paiement sécurisé et espace client. Pour vendre vos produits en ligne.',
+                'base_price': Decimal('5000.00'),
+                'estimated_days': 25,
             },
             {
                 'name': 'Application Web',
-                'description': 'Application web sur mesure avec fonctionnalités complexes',
-                'base_price': 5000.00,
-                'estimated_days': 30
+                'description': 'Application web sur mesure pour répondre à vos besoins spécifiques. Gestion, CRM, ERP, plateforme métier.',
+                'base_price': Decimal('8000.00'),
+                'estimated_days': 40,
             },
             {
-                'name': 'Blog / Site de Contenu',
-                'description': 'Site orienté contenu avec système de gestion d\'articles',
-                'base_price': 1200.00,
-                'estimated_days': 8
+                'name': 'Landing Page',
+                'description': 'Page de destination optimisée pour la conversion. Parfait pour vos campagnes marketing et lancement de produits.',
+                'base_price': Decimal('1200.00'),
+                'estimated_days': 5,
+            },
+            {
+                'name': 'Blog / Magazine',
+                'description': 'Site de publication de contenus avec système de gestion d\'articles, catégories, commentaires et newsletter.',
+                'base_price': Decimal('3000.00'),
+                'estimated_days': 15,
             },
             {
                 'name': 'Portfolio',
-                'description': 'Site portfolio pour artiste, photographe ou créatif',
-                'base_price': 1000.00,
-                'estimated_days': 7
+                'description': 'Site portfolio pour présenter vos réalisations, projets et compétences. Idéal pour créatifs, photographes, designers.',
+                'base_price': Decimal('1800.00'),
+                'estimated_days': 8,
+            },
+            {
+                'name': 'Marketplace',
+                'description': 'Plateforme multi-vendeurs permettant à plusieurs marchands de vendre leurs produits. Système de commissions inclus.',
+                'base_price': Decimal('12000.00'),
+                'estimated_days': 60,
+            },
+            {
+                'name': 'Plateforme SaaS',
+                'description': 'Logiciel en ligne accessible par abonnement. Solution complète avec gestion multi-utilisateurs et facturation récurrente.',
+                'base_price': Decimal('15000.00'),
+                'estimated_days': 80,
             },
         ]
-        
-        for pt_data in project_types:
-            ProjectType.objects.update_or_create(
+
+        project_types = {}
+        for pt_data in project_types_data:
+            pt, created = ProjectType.objects.update_or_create(
                 name=pt_data['name'],
                 defaults=pt_data
             )
-        self.stdout.write(self.style.SUCCESS(f'✓ {len(project_types)} types de projets synchronisés'))
-        
-        # 3. Options de design
-        design_options = [
+            project_types[pt_data['name']] = pt
+            action = "créé" if created else "mis à jour"
+            self.stdout.write(f'  ✓ Type de projet "{pt.name}" {action}')
+
+        self.stdout.write(self.style.SUCCESS(f'\n✅ {len(project_types_data)} types de projets synchronisés\n'))
+
+        # 3. Créer les Options de Design
+        design_options_data = [
             {
                 'name': 'Design Simple',
-                'description': 'Design épuré et fonctionnel',
-                'price_supplement': 0.00
+                'description': 'Design épuré et fonctionnel. Mise en page classique, couleurs sobres, navigation simple. Idéal pour budget serré.',
+                'price_supplement': Decimal('0.00'),
             },
             {
                 'name': 'Design Moderne',
-                'description': 'Design contemporain avec animations',
-                'price_supplement': 500.00
+                'description': 'Design contemporain et attractif. Animations subtiles, mise en page moderne, palette de couleurs harmonieuse.',
+                'price_supplement': Decimal('800.00'),
             },
             {
                 'name': 'Design Premium',
-                'description': 'Design sur mesure avec interactions avancées',
-                'price_supplement': 1200.00
+                'description': 'Design haut de gamme et personnalisé. Animations avancées, interactions riches, identité visuelle unique et soignée.',
+                'price_supplement': Decimal('2000.00'),
+            },
+            {
+                'name': 'Design Sur Mesure',
+                'description': 'Design 100% personnalisé selon votre charte graphique. Création graphique complète, maquettes détaillées, révisions illimitées.',
+                'price_supplement': Decimal('3500.00'),
             },
         ]
-        
-        for do_data in design_options:
-            DesignOption.objects.update_or_create(
+
+        design_options = {}
+        for do_data in design_options_data:
+            do, created = DesignOption.objects.update_or_create(
                 name=do_data['name'],
                 defaults=do_data
             )
-        self.stdout.write(self.style.SUCCESS(f'✓ {len(design_options)} options de design synchronisées'))
-        
-        # 4. Niveaux de complexité
-        complexity_levels = [
+            design_options[do_data['name']] = do
+            action = "créée" if created else "mise à jour"
+            self.stdout.write(f'  ✓ Option de design "{do.name}" {action}')
+
+        self.stdout.write(self.style.SUCCESS(f'\n✅ {len(design_options_data)} options de design synchronisées\n'))
+
+        # 4. Créer les Niveaux de Complexité
+        complexity_levels_data = [
             {
                 'name': 'Basique',
-                'description': 'Fonctionnalités standards',
-                'price_multiplier': 1.0
+                'description': 'Fonctionnalités standards et simples. Parfait pour un site basique avec peu d\'interactions.',
+                'price_multiplier': Decimal('1.00'),
             },
             {
                 'name': 'Intermédiaire',
-                'description': 'Fonctionnalités avancées',
-                'price_multiplier': 1.3
+                'description': 'Fonctionnalités avancées et interactions complexes. Intégrations API, espace membre, formulaires avancés.',
+                'price_multiplier': Decimal('1.50'),
             },
             {
                 'name': 'Avancé',
-                'description': 'Fonctionnalités complexes et intégrations',
-                'price_multiplier': 1.7
+                'description': 'Fonctionnalités très complexes et personnalisées. Développement sur mesure, logique métier complexe, intégrations multiples.',
+                'price_multiplier': Decimal('2.00'),
+            },
+            {
+                'name': 'Expert',
+                'description': 'Projet hautement complexe nécessitant expertise technique pointue. Architecture avancée, scalabilité, haute performance.',
+                'price_multiplier': Decimal('2.50'),
             },
         ]
-        
-        for cl_data in complexity_levels:
-            ComplexityLevel.objects.update_or_create(
+
+        complexity_levels = {}
+        for cl_data in complexity_levels_data:
+            cl, created = ComplexityLevel.objects.update_or_create(
                 name=cl_data['name'],
                 defaults=cl_data
             )
-        self.stdout.write(self.style.SUCCESS(f'✓ {len(complexity_levels)} niveaux de complexité synchronisés'))
-        
-        # 5. Options supplémentaires
-        supplementary_options = [
+            complexity_levels[cl_data['name']] = cl
+            action = "créé" if created else "mis à jour"
+            self.stdout.write(f'  ✓ Niveau de complexité "{cl.name}" {action}')
+
+        self.stdout.write(self.style.SUCCESS(f'\n✅ {len(complexity_levels_data)} niveaux de complexité synchronisés\n'))
+
+        # 5. Créer les Options Supplémentaires
+        supplementary_options_data = [
             {
-                'name': 'Référencement SEO',
-                'description': 'Optimisation pour les moteurs de recherche',
-                'price': 300.00,
-                'billing_type': 'one_time'
+                'name': 'Optimisation SEO',
+                'description': 'Optimisation complète pour les moteurs de recherche : meta tags, sitemap, robots.txt, schema markup, performance.',
+                'price': Decimal('500.00'),
+                'billing_type': 'one_time',
             },
             {
-                'name': 'Hébergement Premium',
-                'description': 'Hébergement haute performance avec SSL',
-                'price': 25.00,
-                'billing_type': 'monthly'
+                'name': 'Référencement SEO Avancé',
+                'description': 'Stratégie SEO complète : audit SEO, recherche de mots-clés, optimisation technique, netlinking, suivi mensuel.',
+                'price': Decimal('300.00'),
+                'billing_type': 'monthly',
             },
             {
-                'name': 'Maintenance',
-                'description': 'Maintenance et mises à jour régulières',
-                'price': 80.00,
-                'billing_type': 'monthly'
+                'name': 'Maintenance Basique',
+                'description': 'Mises à jour de sécurité, sauvegardes mensuelles, support par email (réponse 48h), 2h de modifications/mois.',
+                'price': Decimal('80.00'),
+                'billing_type': 'monthly',
+            },
+            {
+                'name': 'Maintenance Premium',
+                'description': 'Maintenance complète : mises à jour, sauvegardes hebdomadaires, support prioritaire (24h), 5h de modifications/mois, monitoring.',
+                'price': Decimal('200.00'),
+                'billing_type': 'monthly',
             },
             {
                 'name': 'Formation',
-                'description': 'Formation à l\'utilisation du site (2h)',
-                'price': 200.00,
-                'billing_type': 'one_time'
+                'description': 'Formation complète à l\'utilisation de votre site : gestion du contenu, produits, commandes. Documentation personnalisée incluse.',
+                'price': Decimal('400.00'),
+                'billing_type': 'one_time',
             },
             {
                 'name': 'Rédaction de contenu',
-                'description': 'Rédaction professionnelle de 5 pages',
-                'price': 400.00,
-                'billing_type': 'one_time'
+                'description': 'Rédaction professionnelle du contenu de votre site : pages principales, descriptions produits, articles de blog.',
+                'price': Decimal('600.00'),
+                'billing_type': 'one_time',
             },
             {
-                'name': 'Multilingue',
-                'description': 'Site en plusieurs langues',
-                'price': 600.00,
-                'billing_type': 'one_time'
+                'name': 'Photographie professionnelle',
+                'description': 'Séance photo professionnelle pour votre site : produits, locaux, équipe. Retouche et optimisation incluses.',
+                'price': Decimal('800.00'),
+                'billing_type': 'one_time',
             },
             {
-                'name': 'Backup quotidien',
-                'description': 'Sauvegarde automatique quotidienne',
-                'price': 15.00,
-                'billing_type': 'monthly'
+                'name': 'Création de logo',
+                'description': 'Design de logo professionnel : 3 propositions, 2 révisions, fichiers dans tous les formats (AI, PNG, SVG, PDF).',
+                'price': Decimal('450.00'),
+                'billing_type': 'one_time',
+            },
+            {
+                'name': 'Charte graphique complète',
+                'description': 'Identité visuelle complète : logo, typographies, couleurs, déclinaisons, guide d\'utilisation. Fichiers sources inclus.',
+                'price': Decimal('1200.00'),
+                'billing_type': 'one_time',
+            },
+            {
+                'name': 'Hébergement Standard',
+                'description': 'Hébergement web performant : SSL, sauvegardes quotidiennes, certificat SSL, 20 Go stockage, bande passante illimitée.',
+                'price': Decimal('15.00'),
+                'billing_type': 'monthly',
+            },
+            {
+                'name': 'Hébergement Premium',
+                'description': 'Hébergement haute performance : serveur dédié, CDN, SSL premium, 100 Go stockage, monitoring 24/7, backups temps réel.',
+                'price': Decimal('50.00'),
+                'billing_type': 'monthly',
+            },
+            {
+                'name': 'Nom de domaine',
+                'description': 'Réservation et gestion de votre nom de domaine (.com, .fr, .net, etc.). Renouvellement automatique.',
+                'price': Decimal('15.00'),
+                'billing_type': 'yearly',
             },
             {
                 'name': 'Certificat SSL Premium',
-                'description': 'Certificat SSL avec garantie étendue',
-                'price': 150.00,
-                'billing_type': 'yearly'
+                'description': 'Certificat SSL premium avec validation étendue (EV) pour sécurité maximale et confiance clients.',
+                'price': Decimal('200.00'),
+                'billing_type': 'yearly',
             },
             {
-                'name': 'Google Analytics',
-                'description': 'Configuration et intégration Google Analytics',
-                'price': 150.00,
-                'billing_type': 'one_time'
+                'name': 'Analytics et Reporting',
+                'description': 'Configuration Google Analytics, tableaux de bord personnalisés, rapports mensuels détaillés sur le trafic et conversions.',
+                'price': Decimal('300.00'),
+                'billing_type': 'one_time',
             },
             {
-                'name': 'Newsletter',
-                'description': 'Système de newsletter avec Mailchimp',
-                'price': 250.00,
-                'billing_type': 'one_time'
+                'name': 'Intégration Newsletter',
+                'description': 'Intégration MailChimp/Sendinblue : formulaires d\'inscription, automatisations, templates emails personnalisés.',
+                'price': Decimal('400.00'),
+                'billing_type': 'one_time',
+            },
+            {
+                'name': 'Espace Membre',
+                'description': 'Système complet d\'authentification : inscription, connexion, profil utilisateur, mot de passe oublié.',
+                'price': Decimal('800.00'),
+                'billing_type': 'one_time',
+            },
+            {
+                'name': 'Multilingue',
+                'description': 'Site multilingue avec traduction de tous les contenus. 2 langues incluses (langues supplémentaires : +300€/langue).',
+                'price': Decimal('1000.00'),
+                'billing_type': 'one_time',
+            },
+            {
+                'name': 'Application Mobile',
+                'description': 'Application mobile iOS et Android native ou hybride (React Native/Flutter) connectée à votre site web.',
+                'price': Decimal('5000.00'),
+                'billing_type': 'one_time',
+            },
+            {
+                'name': 'Intégration CRM',
+                'description': 'Connexion avec votre CRM (Salesforce, HubSpot, Pipedrive) pour synchronisation automatique des contacts et leads.',
+                'price': Decimal('1500.00'),
+                'billing_type': 'one_time',
+            },
+            {
+                'name': 'Support Prioritaire',
+                'description': 'Support client prioritaire : réponse garantie sous 4h en semaine, hotline téléphonique, résolution rapide des incidents.',
+                'price': Decimal('150.00'),
+                'billing_type': 'monthly',
             },
         ]
-        
-        for so_data in supplementary_options:
-            SupplementaryOption.objects.update_or_create(
+
+        supplementary_options = {}
+        for so_data in supplementary_options_data:
+            so, created = SupplementaryOption.objects.update_or_create(
                 name=so_data['name'],
                 defaults=so_data
             )
-        self.stdout.write(self.style.SUCCESS(f'✓ {len(supplementary_options)} options supplémentaires synchronisées'))
-        
-        # 6. Templates de devis
+            supplementary_options[so_data['name']] = so
+            action = "créée" if created else "mise à jour"
+            self.stdout.write(f'  ✓ Option supplémentaire "{so.name}" {action}')
+
+        self.stdout.write(self.style.SUCCESS(f'\n✅ {len(supplementary_options_data)} options supplémentaires synchronisées\n'))
+
+        # 6. Créer les Templates de Devis (optionnel)
         templates_data = [
             {
                 'name': 'Site Vitrine Standard',
-                'description': 'Template pour un site vitrine classique',
+                'description': 'Template pour site vitrine classique PME',
                 'project_type': 'Site Vitrine',
                 'design_option': 'Design Moderne',
                 'complexity_level': 'Basique',
-                'supplementary_options': ['Référencement SEO', 'Hébergement Premium'],
-                'default_description': 'Site vitrine professionnel avec :\n- Page d\'accueil\n- Page À propos\n- Page Services\n- Page Contact\n- Formulaire de contact\n- Design responsive\n- Optimisation SEO de base'
+                'supplementary_options': ['Optimisation SEO', 'Formation', 'Hébergement Standard', 'Nom de domaine'],
+                'default_description': '''Site vitrine professionnel pour présenter votre entreprise.
+
+**Inclus dans ce devis :**
+- Page d'accueil attractive
+- Page de présentation de vos services
+- Page "À propos"
+- Page contact avec formulaire
+- Design responsive (mobile, tablette, desktop)
+- Optimisation des performances
+- Formulaire de contact
+- Intégration réseaux sociaux
+
+**Livrables :**
+- Site web complet et fonctionnel
+- Code source
+- Documentation technique
+- Formation à l'administration
+''',
             },
             {
                 'name': 'E-commerce Complet',
-                'description': 'Template pour une boutique en ligne complète',
-                'project_type': 'Site E-commerce',
+                'description': 'Template pour boutique en ligne complète',
+                'project_type': 'E-commerce',
                 'design_option': 'Design Premium',
+                'complexity_level': 'Intermédiaire',
+                'supplementary_options': ['Optimisation SEO', 'Maintenance Premium', 'Formation', 'Hébergement Premium', 'Analytics et Reporting'],
+                'default_description': '''Boutique en ligne complète pour vendre vos produits.
+
+**Fonctionnalités e-commerce :**
+- Catalogue produits avec recherche et filtres
+- Panier d'achat intelligent
+- Paiement sécurisé (Stripe, PayPal)
+- Gestion des stocks automatique
+- Espace client
+- Suivi des commandes
+- Système de promotions
+- Emails transactionnels
+
+**Administration :**
+- Dashboard complet
+- Gestion produits
+- Gestion commandes
+- Statistiques de vente
+- Gestion clients
+
+**Livrables :**
+- Boutique en ligne complète
+- Dashboard administrateur
+- Documentation complète
+- Formation approfondie
+''',
+            },
+            {
+                'name': 'Landing Page Marketing',
+                'description': 'Template pour page de destination conversion',
+                'project_type': 'Landing Page',
+                'design_option': 'Design Moderne',
+                'complexity_level': 'Basique',
+                'supplementary_options': ['Optimisation SEO', 'Analytics et Reporting', 'Intégration Newsletter'],
+                'default_description': '''Landing page optimisée pour maximiser vos conversions.
+
+**Sections incluses :**
+- Hero section percutante
+- Proposition de valeur claire
+- Bénéfices produit/service
+- Témoignages clients
+- Call-to-action optimisé
+- Formulaire de capture
+- FAQ
+
+**Optimisations :**
+- A/B testing ready
+- Analytics intégrés
+- Temps de chargement optimisé
+- Mobile-first
+- SEO optimisé
+
+**Livrables :**
+- Landing page complète
+- Intégrations marketing
+- Documentation
+''',
+            },
+            {
+                'name': 'Application Web Sur Mesure',
+                'description': 'Template pour application web personnalisée',
+                'project_type': 'Application Web',
+                'design_option': 'Design Sur Mesure',
                 'complexity_level': 'Avancé',
-                'supplementary_options': ['Référencement SEO', 'Hébergement Premium', 'Maintenance', 'Formation'],
-                'default_description': 'Boutique en ligne complète avec :\n- Catalogue produits\n- Panier d\'achat\n- Paiement sécurisé (Stripe, PayPal)\n- Gestion des commandes\n- Espace client\n- Dashboard admin\n- Emails automatiques'
+                'supplementary_options': ['Maintenance Premium', 'Formation', 'Support Prioritaire', 'Hébergement Premium'],
+                'default_description': '''Application web sur mesure répondant à vos besoins spécifiques.
+
+**Phase de conception :**
+- Analyse détaillée de vos besoins
+- Maquettes UX/UI complètes
+- Architecture technique
+- Planning détaillé
+
+**Développement :**
+- Backend robuste et scalable
+- Interface utilisateur intuitive
+- API REST sécurisée
+- Tests automatisés
+- Documentation technique
+
+**Fonctionnalités standards :**
+- Authentification multi-niveaux
+- Dashboard personnalisé
+- Gestion des données
+- Exports et rapports
+- Notifications
+
+**Livrables :**
+- Application complète
+- Code source documenté
+- Tests et documentation
+- Formation équipe
+- Maintenance assurée
+''',
             },
         ]
-        
-        for template_data in templates_data:
-            # Récupérer les objets liés
-            project_type = ProjectType.objects.get(name=template_data['project_type'])
-            design_option = DesignOption.objects.get(name=template_data['design_option'])
-            complexity_level = ComplexityLevel.objects.get(name=template_data['complexity_level'])
-            
-            template, _ = QuoteTemplate.objects.update_or_create(
-                name=template_data['name'],
-                defaults={
-                    'description': template_data['description'],
-                    'project_type': project_type,
-                    'design_option': design_option,
-                    'complexity_level': complexity_level,
-                    'default_description': template_data['default_description'],
-                }
-            )
-       
-            # Synchroniser les options supplémentaires
-            option_objects = [
-                SupplementaryOption.objects.get(name=option_name)
-                for option_name in template_data['supplementary_options']
-            ]
-            template.supplementary_options.set(option_objects)
 
-        self.stdout.write(self.style.SUCCESS(f'✓ {len(templates_data)} templates synchronisés'))
-        
-        self.stdout.write(self.style.SUCCESS('\n🎉 Base de données peuplée avec succès !'))
-        self.stdout.write(self.style.WARNING('\n📝 Prochaines étapes :'))
-        self.stdout.write('   1. Accédez à l\'admin : http://localhost:8000/admin')
-        self.stdout.write('   2. Configurez votre logo dans "Entreprise"')
-        self.stdout.write('   3. Créez votre premier devis !')
+        for tpl_data in templates_data:
+            # Extraire les options supplémentaires
+            supp_opt_names = tpl_data.pop('supplementary_options')
+
+            # Remplacer les noms par les objets
+            tpl_data['project_type'] = project_types[tpl_data['project_type']]
+            tpl_data['design_option'] = design_options[tpl_data['design_option']]
+            tpl_data['complexity_level'] = complexity_levels[tpl_data['complexity_level']]
+
+            # Créer/Mettre à jour le template
+            template, created = QuoteTemplate.objects.update_or_create(
+                name=tpl_data['name'],
+                defaults=tpl_data
+            )
+
+            # Associer les options supplémentaires
+            template.supplementary_options.set([supplementary_options[name] for name in supp_opt_names])
+
+            action = "créé" if created else "mis à jour"
+            self.stdout.write(f'  ✓ Template "{template.name}" {action}')
+
+        self.stdout.write(self.style.SUCCESS(f'\n✅ {len(templates_data)} templates de devis synchronisés\n'))
+
+        # Résumé final
+        self.stdout.write(self.style.SUCCESS('=' * 60))
+        self.stdout.write(self.style.SUCCESS('🎉 BASE DE DONNÉES QUOTES PEUPLÉE AVEC SUCCÈS !'))
+        self.stdout.write(self.style.SUCCESS('=' * 60))
+        self.stdout.write(f'\n📊 Résumé :')
+        self.stdout.write(f'   • 1 entreprise configurée')
+        self.stdout.write(f'   • {ProjectType.objects.count()} types de projets')
+        self.stdout.write(f'   • {DesignOption.objects.count()} options de design')
+        self.stdout.write(f'   • {ComplexityLevel.objects.count()} niveaux de complexité')
+        self.stdout.write(f'   • {SupplementaryOption.objects.count()} options supplémentaires')
+        self.stdout.write(f'   • {QuoteTemplate.objects.count()} templates de devis')
+        self.stdout.write(f'\n📝 Prochaines étapes :')
+        self.stdout.write('   1. Testez la création de devis via l\'API ou l\'admin')
+        self.stdout.write('   2. Accédez à l\'admin : http://localhost:8000/admin')
+        self.stdout.write('   3. Personnalisez les options selon vos besoins\n')
