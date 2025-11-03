@@ -14,12 +14,12 @@ logger = logging.getLogger('users')
 
 class RegisterRateThrottle(AnonRateThrottle):
     """Rate limiting spécifique pour l'inscription"""
-    rate = '5/hour'
+    rate = '100/hour'  # Augmenté pour le développement
 
 
 class LoginRateThrottle(AnonRateThrottle):
     """Rate limiting spécifique pour le login"""
-    rate = '10/hour'
+    rate = '100/hour'  # Augmenté pour le développement
 
 
 class RegisterView(generics.CreateAPIView):
