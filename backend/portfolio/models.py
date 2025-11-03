@@ -27,22 +27,32 @@ class Technology(models.Model):
 
 class Project(models.Model):
     """Projets du portfolio"""
+
+    CATEGORY_CHOICES = [
+        ('web', 'Site Web'),
+        ('ecommerce', 'E-commerce'),
+        ('mobile', 'Application Mobile'),
+        ('api', 'API / Backend'),
+        ('other', 'Autre'),
+    ]
+
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
     short_description = models.CharField(max_length=300)
     description = models.TextField()
-    
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='web', help_text="Catégorie du projet")
+
     # Images
     thumbnail = models.ImageField(upload_to='projects/thumbnails/', blank=True, null=True)
     image_main = models.ImageField(upload_to='projects/main/', blank=True, null=True)
-    
+
     # Technologies
     technologies = models.ManyToManyField(Technology, related_name='projects')
-    
+
     # Liens
     github_url = models.URLField(blank=True, validators=[URLValidator()])
     live_url = models.URLField(blank=True, validators=[URLValidator()])
-    
+
     # Métadonnées
     featured = models.BooleanField(default=False, help_text="Projet mis en avant sur la page d'accueil")
     order = models.IntegerField(default=0, help_text="Ordre d'affichage (0 = premier)")

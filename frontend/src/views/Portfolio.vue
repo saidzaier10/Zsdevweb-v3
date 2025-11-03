@@ -110,10 +110,10 @@
               <div class="flex flex-wrap gap-2 mb-4">
                 <span
                   v-for="tech in project.technologies?.slice(0, 3)"
-                  :key="tech"
+                  :key="tech.id || tech.name || tech"
                   class="px-3 py-1 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-xs font-medium"
                 >
-                  {{ tech }}
+                  {{ tech.name || tech }}
                 </span>
               </div>
 
