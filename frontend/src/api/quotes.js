@@ -30,7 +30,7 @@ export const getAllQuotes = () => {
 // Récupérer les devis de l'utilisateur connecté
 export const getMyQuotes = (status = null) => {
   const params = status ? { status } : {}
-  return apiClient.get('/api/quotes/quotes/my-quotes/', { params })
+  return apiClient.get('/api/quotes/quotes/my_quotes/', { params })
 }
 
 // Récupérer un devis par ID
