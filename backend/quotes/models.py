@@ -341,6 +341,16 @@ class Quote(models.Model):
         related_name='assigned_quotes',
         verbose_name="Assigné à"
     )
+
+    # Utilisateur qui a créé le devis
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_quotes',
+        verbose_name="Créé par"
+    )
     
     # Dates
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
@@ -358,7 +368,6 @@ class Quote(models.Model):
     def __str__(self):
         return f"Devis #{self.quote_number or self.id} - {self.client_name}"
     
-    # ========== MÉTHODE MODIFIÉE ========== #
     def calculate_prices(self, skip_m2m=False):
         """
         Calcule tous les prix du devis avec remise
@@ -466,7 +475,6 @@ class Quote(models.Model):
             return f"/devis/sign/{self.signature_token}/"
         return None
     
-    # ========== MÉTHODE MODIFIÉE ========== #
     def save(self, *args, **kwargs):
         """Calcule automatiquement les prix avant la sauvegarde"""
         # Vérifier si c'est une création (pas d'ID)

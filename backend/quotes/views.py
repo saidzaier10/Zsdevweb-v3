@@ -42,11 +42,7 @@ from .emails import (
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
-    """
-    API pour gérer les informations de l'entreprise
-    
-    Seuls les admins peuvent modifier
-    """
+    """API pour gérer les informations de l'entreprise"""
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -59,11 +55,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
 
 class ProjectTypeViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API pour récupérer les types de projets
-    
-    Liste en lecture seule pour tous
-    """
+    """API pour récupérer les types de projets"""
     queryset = ProjectType.objects.filter(is_active=True)
     serializer_class = ProjectTypeSerializer
     permission_classes = [permissions.AllowAny]
@@ -99,12 +91,7 @@ class SupplementaryOptionViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class QuoteTemplateViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API pour récupérer les templates de devis
-    
-    Les utilisateurs peuvent voir les templates actifs
-    Les admins peuvent tout voir et modifier
-    """
+    """API pour récupérer les templates de devis"""
     queryset = QuoteTemplate.objects.filter(is_active=True)
     serializer_class = QuoteTemplateSerializer
     
@@ -122,13 +109,7 @@ class QuoteTemplateViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class QuoteViewSet(viewsets.ModelViewSet):
-    """
-    API pour gérer les devis
-    
-    - Tous peuvent créer un devis (POST)
-    - Seuls les admins peuvent voir tous les devis (GET list)
-    - Le client peut voir son devis avec le token (GET detail public)
-    """
+    """API pour gérer les devis"""
     queryset = Quote.objects.all().select_related(
         'project_type',
         'design_option',
@@ -145,31 +126,23 @@ class QuoteViewSet(viewsets.ModelViewSet):
         return QuoteDetailSerializer
     
     def get_permissions(self):
-        """
-        - Création : tout le monde
-        - Liste/Modification : admins uniquement
-        - Détail : public si token valide, sinon admin
-        """
+        """Permissions par action"""
         if self.action == 'create':
             return [permissions.AllowAny()]
         elif self.action in ['list', 'update', 'partial_update', 'destroy']:
             return [permissions.IsAdminUser()]
-        return [permissions.AllowAny()]  # retrieve géré dans get_object
+        return [permissions.AllowAny()]
     
     def get_queryset(self):
-        """Filtrer selon l'utilisateur"""
+        """Admins voient tout, autres ne voient rien (ils utilisent my_quotes)"""
         queryset = super().get_queryset()
         
-        # Admins voient tout
         if self.request.user and self.request.user.is_staff:
-            # Filtres optionnels
             status_filter = self.request.query_params.get('status', None)
             if status_filter:
                 queryset = queryset.filter(status=status_filter)
-            
             return queryset
         
-        # Autres utilisateurs ne voient rien dans la liste
         return queryset.none()
     
     def create(self, request, *args, **kwargs):
@@ -177,7 +150,6 @@ class QuoteViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        # Sauvegarder le devis
         quote = serializer.save()
         
         # Envoyer l'email de création
@@ -187,10 +159,8 @@ class QuoteViewSet(viewsets.ModelViewSet):
             quote.sent_at = timezone.now()
             quote.save(update_fields=['status', 'sent_at'])
         except Exception as e:
-            # Ne pas bloquer si l'email échoue
             print(f"Erreur envoi email: {e}")
         
-        # Retourner les détails complets
         detail_serializer = QuoteDetailSerializer(quote, context={'request': request})
         
         return Response(
@@ -198,20 +168,38 @@ class QuoteViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED
         )
     
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def my_quotes(self, request):
+        """Récupère les devis de l'utilisateur connecté
+        
+        GET /api/quotes/my-quotes/
+        GET /api/quotes/my-quotes/?status=sent
+        """
+        # Récupérer tous les devis associés à l'email de l'utilisateur
+        queryset = Quote.objects.filter(
+            client_email=request.user.email
+        ).select_related(
+            'project_type',
+            'design_option',
+            'complexity_level'
+        ).prefetch_related('supplementary_options').order_by('-created_at')
+        
+        # Filtrer par statut si demandé
+        status_filter = request.query_params.get('status', None)
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        serializer = QuoteListSerializer(queryset, many=True)
+        return Response(serializer.data)
+    
     @action(detail=True, methods=['get'], url_path='download-pdf')
     def download_pdf(self, request, pk=None):
-        """
-        Télécharger le PDF du devis
-        
-        GET /api/quotes/{id}/download-pdf/
-        """
+        """Télécharger le PDF du devis"""
         quote = self.get_object()
         
-        # Générer le PDF
         generator = QuotePDFGenerator(quote)
         pdf_buffer = generator.generate()
         
-        # Sauvegarder le PDF dans le modèle
         from django.core.files.base import ContentFile
         pdf_content = pdf_buffer.getvalue()
         quote.pdf_file.save(
@@ -220,18 +208,13 @@ class QuoteViewSet(viewsets.ModelViewSet):
             save=True
         )
         
-        # Retourner le PDF
         response = HttpResponse(pdf_content, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="devis_{quote.quote_number}.pdf"'
         return response
     
     @action(detail=True, methods=['post'], url_path='send-email')
     def send_email(self, request, pk=None):
-        """
-        Envoyer le devis par email
-        
-        POST /api/quotes/{id}/send-email/
-        """
+        """Envoyer le devis par email"""
         quote = self.get_object()
         
         try:
@@ -250,16 +233,11 @@ class QuoteViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
-    @action(detail=False, methods=['get'], url_path='public/(?P<token>[^/.]+)')
+    @action(detail=False, methods=['get'], url_path='public/(?P<token>[^/.]+)', permission_classes=[permissions.AllowAny])
     def public_view(self, request, token=None):
-        """
-        Voir un devis avec le token public (sans authentification)
-        
-        GET /api/quotes/public/{token}/
-        """
+        """Voir un devis avec le token public (sans authentification)"""
         quote = get_object_or_404(Quote, signature_token=token)
         
-        # Marquer comme consulté
         if not quote.viewed_at:
             quote.viewed_at = timezone.now()
             if quote.status == 'sent':
@@ -269,31 +247,23 @@ class QuoteViewSet(viewsets.ModelViewSet):
         serializer = QuoteDetailSerializer(quote, context={'request': request})
         return Response(serializer.data)
     
-    @action(detail=False, methods=['post'], url_path='sign/(?P<token>[^/.]+)')
+    @action(detail=False, methods=['post'], url_path='sign/(?P<token>[^/.]+)', permission_classes=[permissions.AllowAny])
     def sign_quote(self, request, token=None):
-        """
-        Signer électroniquement un devis
-        
-        POST /api/quotes/sign/{token}/
-        Body: { "signature": "base64...", "signer_name": "...", "terms_accepted": true }
-        """
+        """Signer électroniquement un devis"""
         quote = get_object_or_404(Quote, signature_token=token)
         
-        # Vérifier que le devis n'est pas déjà signé
         if quote.signed_at:
             return Response(
                 {'error': 'Ce devis a déjà été signé'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Vérifier que le devis n'est pas expiré
         if quote.is_expired:
             return Response(
                 {'error': 'Ce devis a expiré'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Récupérer les données de signature
         signature_data = request.data.get('signature')
         signer_name = request.data.get('signer_name')
         terms_accepted = request.data.get('terms_accepted', False)
@@ -304,14 +274,12 @@ class QuoteViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Marquer comme signé et accepté
         quote.signature_image = signature_data
         quote.signer_name = signer_name
         quote.signed_at = timezone.now()
         quote.accepted_at = timezone.now()
         quote.status = 'accepted'
         
-        # Récupérer l'IP du client
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
             quote.client_ip = x_forwarded_for.split(',')[0]
@@ -320,7 +288,6 @@ class QuoteViewSet(viewsets.ModelViewSet):
         
         quote.save()
         
-        # Envoyer l'email de confirmation
         try:
             send_quote_accepted_email(quote)
         except Exception as e:
@@ -334,22 +301,15 @@ class QuoteViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'], url_path='reject')
     def reject(self, request, pk=None):
-        """
-        Rejeter un devis
-        
-        POST /api/quotes/{id}/reject/
-        Body: { "reason": "..." }
-        """
+        """Rejeter un devis"""
         quote = self.get_object()
         
-        # Vérifier que le devis n'est pas déjà accepté
         if quote.status == 'accepted':
             return Response(
                 {'error': 'Un devis accepté ne peut pas être rejeté'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Récupérer la raison du refus
         rejection_reason = request.data.get('reason', '')
         
         quote.status = 'rejected'
@@ -357,7 +317,6 @@ class QuoteViewSet(viewsets.ModelViewSet):
         quote.rejected_at = timezone.now()
         quote.save()
         
-        # Envoyer l'email de refus
         try:
             send_quote_rejected_email(quote)
         except Exception as e:
@@ -368,31 +327,22 @@ class QuoteViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'], url_path='statistics', permission_classes=[permissions.IsAdminUser])
     def statistics(self, request):
-        """
-        Statistiques des devis (admin uniquement)
-        
-        GET /api/quotes/statistics/
-        """
-        # Total des devis
+        """Statistiques des devis (admin uniquement)"""
         total_quotes = Quote.objects.count()
         
-        # Montant total et moyen
         aggregates = Quote.objects.aggregate(
             total_amount=Sum('total_ttc'),
             average_amount=Avg('total_ttc')
         )
         
-        # Répartition par statut
         status_breakdown = dict(
             Quote.objects.values('status').annotate(count=Count('id')).values_list('status', 'count')
         )
         
-        # Taux de conversion
         sent_count = Quote.objects.filter(status__in=['sent', 'viewed', 'accepted']).count()
         accepted_count = Quote.objects.filter(status='accepted').count()
         conversion_rate = (accepted_count / sent_count * 100) if sent_count > 0 else 0
         
-        # Devis par mois (12 derniers mois)
         twelve_months_ago = timezone.now() - timedelta(days=365)
         quotes_by_month = Quote.objects.filter(
             created_at__gte=twelve_months_ago
@@ -403,7 +353,6 @@ class QuoteViewSet(viewsets.ModelViewSet):
             total=Sum('total_ttc')
         ).order_by('month')
         
-        # Types de projets les plus demandés
         top_project_types = Quote.objects.values(
             'project_type__name'
         ).annotate(
@@ -426,14 +375,9 @@ class QuoteViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'], url_path='duplicate')
     def duplicate(self, request, pk=None):
-        """
-        Dupliquer un devis
-        
-        POST /api/quotes/{id}/duplicate/
-        """
+        """Dupliquer un devis"""
         original_quote = self.get_object()
         
-        # Créer une copie
         new_quote = Quote.objects.create(
             client_name=original_quote.client_name,
             client_email=original_quote.client_email,
@@ -453,10 +397,8 @@ class QuoteViewSet(viewsets.ModelViewSet):
             status='draft'
         )
         
-        # Copier les options supplémentaires
         new_quote.supplementary_options.set(original_quote.supplementary_options.all())
         
-        # Recalculer les prix
         prices = new_quote.calculate_prices(skip_m2m=False)
         for field, value in prices.items():
             setattr(new_quote, field, value)
@@ -467,11 +409,7 @@ class QuoteViewSet(viewsets.ModelViewSet):
 
 
 class QuoteEmailLogViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API pour consulter les logs d'emails
-    
-    Admin uniquement
-    """
+    """API pour consulter les logs d'emails"""
     queryset = QuoteEmailLog.objects.all()
     serializer_class = QuoteEmailLogSerializer
     permission_classes = [permissions.IsAdminUser]
