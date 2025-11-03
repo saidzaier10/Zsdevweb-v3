@@ -5,7 +5,7 @@
         <!-- Logo -->
         <router-link to="/" class="flex items-center space-x-2 group">
           <div class="w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-500 rounded-lg flex items-center justify-center transform group-hover:rotate-6 transition-transform duration-300">
-            <span class="text-white font-bold text-xl">Z</span>
+            <span class="text-white font-bold text-xl">Zs</span>
           </div>
           <span class="text-2xl font-display font-bold gradient-text hidden sm:block">
             Zsdevweb
@@ -33,8 +33,8 @@
             </router-link>
           </li>
           <li>
-            <router-link 
-              to="/devis" 
+            <router-link
+              to="/devis"
               class="px-4 py-2 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all duration-200"
               active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
             >
@@ -43,8 +43,8 @@
           </li>
           <!-- Mes Devis (uniquement si connecté) -->
           <li v-if="authStore.isAuthenticated">
-            <router-link 
-              to="/mes-devis" 
+            <router-link
+              to="/mes-devis"
               class="px-4 py-2 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all duration-200"
               active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
             >
@@ -53,8 +53,8 @@
           </li>
           <!-- Admin (uniquement si admin) -->
           <li v-if="authStore.user?.is_staff">
-            <router-link 
-              to="/admin/devis" 
+            <router-link
+              to="/admin/devis"
               class="px-4 py-2 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all duration-200"
               active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
             >
@@ -62,8 +62,8 @@
             </router-link>
           </li>
           <li>
-            <router-link 
-              to="/contact" 
+            <router-link
+              to="/contact"
               class="px-4 py-2 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all duration-200"
               active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
             >
@@ -165,37 +165,37 @@
           >
             Portfolio
           </router-link>
-          <router-link 
-            to="/devis" 
-            @click="mobileMenuOpen = false" 
+          <router-link
+            to="/devis"
+            @click="mobileMenuOpen = false"
             class="block px-4 py-3 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all"
             active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
           >
             Devis
           </router-link>
-          <!-- Mes Devis (uniquement si connecté) -->
-          <router-link 
+          <!-- Mes Devis (mobile - uniquement si connecté) -->
+          <router-link
             v-if="authStore.isAuthenticated"
-            to="/mes-devis" 
-            @click="mobileMenuOpen = false" 
+            to="/mes-devis"
+            @click="mobileMenuOpen = false"
             class="block px-4 py-3 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all"
             active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
           >
             Mes Devis
           </router-link>
-          <!-- Admin (uniquement si admin) -->
-          <router-link 
+          <!-- Admin (mobile - uniquement si admin) -->
+          <router-link
             v-if="authStore.user?.is_staff"
-            to="/admin/devis" 
-            @click="mobileMenuOpen = false" 
+            to="/admin/devis"
+            @click="mobileMenuOpen = false"
             class="block px-4 py-3 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all"
             active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
           >
             Admin
           </router-link>
-          <router-link 
-            to="/contact" 
-            @click="mobileMenuOpen = false" 
+          <router-link
+            to="/contact"
+            @click="mobileMenuOpen = false"
             class="block px-4 py-3 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all"
             active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
           >

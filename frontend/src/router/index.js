@@ -69,14 +69,13 @@ const router = createRouter({
 // Guard pour protéger les routes
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  const token = localStorage.getItem('accessToken')
-  
-  if (to.meta.requiresAuth && !token) {
-    // Rediriger vers login si auth requise
-    next('/login')
-  } else if (to.meta.requiresAdmin) {
-    // Vérifier si l'utilisateur est admin
-    if (!authStore.user || !authStore.user.is_staff) {
+
+  if (to.meta.requiresAuth) {
+    const token = localStorage.getItem('accessToken')
+    if (!token) {
+      next('/login')
+    } else if (to.meta.requiresAdmin && !authStore.user?.is_staff) {
+      // Rediriger si l'utilisateur n'est pas admin
       next('/')
     } else {
       next()
