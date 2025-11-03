@@ -22,15 +22,15 @@
             Tous ({{ quotes.length }})
           </button>
           <button
-            @click="filterStatus = 'pending'"
+            @click="filterStatus = 'draft'"
             :class="[
               'px-4 py-2 rounded-lg font-medium transition-all',
-              filterStatus === 'pending'
+              filterStatus === 'draft'
                 ? 'bg-primary-600 text-white'
                 : 'bg-gray-100 dark:bg-dark-700 text-dark-700 dark:text-dark-200 hover:bg-gray-200 dark:hover:bg-dark-600'
             ]"
           >
-            En attente ({{ countByStatus('pending') }})
+            Brouillons ({{ countByStatus('draft') }})
           </button>
           <button
             @click="filterStatus = 'sent'"
@@ -205,8 +205,9 @@ const countByStatus = (status) => {
 
 const getStatusLabel = (status) => {
   const labels = {
-    pending: 'En attente',
+    draft: 'Brouillon',
     sent: 'Envoyé',
+    viewed: 'Consulté',
     accepted: 'Accepté',
     rejected: 'Refusé',
     expired: 'Expiré'
@@ -216,8 +217,9 @@ const getStatusLabel = (status) => {
 
 const getStatusClass = (status) => {
   const classes = {
-    pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
+    draft: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400',
     sent: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
+    viewed: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400',
     accepted: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
     rejected: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
     expired: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'

@@ -8,7 +8,7 @@
       </div>
 
       <!-- Statistiques -->
-      <div v-if="statistics" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div v-if="statistics" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-dark-700">
           <div class="flex items-center justify-between mb-2">
             <h3 class="text-sm font-medium text-dark-600 dark:text-dark-400">Total</h3>
@@ -16,17 +16,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
             </svg>
           </div>
-          <p class="text-3xl font-bold text-dark-800 dark:text-dark-100">{{ statistics.total }}</p>
-        </div>
-
-        <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-dark-700">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="text-sm font-medium text-dark-600 dark:text-dark-400">En attente</h3>
-            <svg class="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-          </div>
-          <p class="text-3xl font-bold text-dark-800 dark:text-dark-100">{{ statistics.pending }}</p>
+          <p class="text-3xl font-bold text-dark-800 dark:text-dark-100">{{ statistics.total_quotes }}</p>
         </div>
 
         <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-dark-700">
@@ -36,7 +26,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
             </svg>
           </div>
-          <p class="text-3xl font-bold text-dark-800 dark:text-dark-100">{{ statistics.sent }}</p>
+          <p class="text-3xl font-bold text-dark-800 dark:text-dark-100">{{ countByStatus('sent') }}</p>
         </div>
 
         <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-dark-700">
@@ -46,17 +36,17 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
           </div>
-          <p class="text-3xl font-bold text-dark-800 dark:text-dark-100">{{ statistics.accepted }}</p>
+          <p class="text-3xl font-bold text-dark-800 dark:text-dark-100">{{ countByStatus('accepted') }}</p>
         </div>
 
         <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-dark-700">
           <div class="flex items-center justify-between mb-2">
-            <h3 class="text-sm font-medium text-dark-600 dark:text-dark-400">Refusés</h3>
-            <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            <h3 class="text-sm font-medium text-dark-600 dark:text-dark-400">Montant total</h3>
+            <svg class="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
           </div>
-          <p class="text-3xl font-bold text-dark-800 dark:text-dark-100">{{ statistics.rejected }}</p>
+          <p class="text-3xl font-bold text-dark-800 dark:text-dark-100">{{ formatAmount(statistics.total_amount) }} €</p>
         </div>
       </div>
 
@@ -84,8 +74,9 @@
             class="px-4 py-2 rounded-lg border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-700 text-dark-800 dark:text-dark-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           >
             <option :value="null">Tous les statuts</option>
-            <option value="pending">En attente</option>
+            <option value="draft">Brouillons</option>
             <option value="sent">Envoyés</option>
+            <option value="viewed">Consultés</option>
             <option value="accepted">Acceptés</option>
             <option value="rejected">Refusés</option>
             <option value="expired">Expirés</option>
@@ -167,7 +158,7 @@
                       getStatusClass(quote.status)
                     ]"
                   >
-                    {{ getStatusLabel(quote.status) }}
+                    {{ quote.status_display }}
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right">
@@ -179,7 +170,7 @@
                       Voir
                     </router-link>
                     <button
-                      v-if="quote.status === 'pending'"
+                      v-if="quote.status === 'draft'"
                       @click="sendQuote(quote.id)"
                       :disabled="sending === quote.id"
                       class="text-green-600 hover:text-green-700 dark:text-green-400 font-medium text-sm disabled:opacity-50"
@@ -296,21 +287,15 @@ const paginatedQuotes = computed(() => {
   return filteredQuotes.value.slice(startIndex.value, endIndex.value)
 })
 
-const getStatusLabel = (status) => {
-  const labels = {
-    pending: 'En attente',
-    sent: 'Envoyé',
-    accepted: 'Accepté',
-    rejected: 'Refusé',
-    expired: 'Expiré'
-  }
-  return labels[status] || status
+const countByStatus = (status) => {
+  return quotes.value.filter(q => q.status === status).length
 }
 
 const getStatusClass = (status) => {
   const classes = {
-    pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
+    draft: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400',
     sent: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
+    viewed: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400',
     accepted: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
     rejected: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
     expired: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
@@ -325,6 +310,10 @@ const formatShortDate = (dateString) => {
     month: '2-digit',
     year: 'numeric'
   })
+}
+
+const formatAmount = (amount) => {
+  return parseFloat(amount).toFixed(2)
 }
 
 const sendQuote = async (quoteId) => {

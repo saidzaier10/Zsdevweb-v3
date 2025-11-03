@@ -5,7 +5,7 @@
         <!-- Logo -->
         <router-link to="/" class="flex items-center space-x-2 group">
           <div class="w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-500 rounded-lg flex items-center justify-center transform group-hover:rotate-6 transition-transform duration-300">
-            <span class="text-white font-bold text-xl">Zs</span>
+            <span class="text-white font-bold text-xl">Z</span>
           </div>
           <span class="text-2xl font-display font-bold gradient-text hidden sm:block">
             Zsdevweb
