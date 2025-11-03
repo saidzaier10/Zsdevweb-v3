@@ -170,14 +170,14 @@ class QuoteViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def my_quotes(self, request):
-        """Récupère les devis de l'utilisateur connecté
+        """Récupère les devis créés par l'utilisateur connecté
         
         GET /api/quotes/my-quotes/
         GET /api/quotes/my-quotes/?status=sent
         """
-        # Récupérer tous les devis associés à l'email de l'utilisateur
+        # Récupérer tous les devis créés par l'utilisateur
         queryset = Quote.objects.filter(
-            client_email=request.user.email
+            created_by=request.user
         ).select_related(
             'project_type',
             'design_option',
