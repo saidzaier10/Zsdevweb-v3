@@ -30,6 +30,7 @@ router.register(r'quote-email-logs', QuoteEmailLogViewSet, basename='quoteemaill
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
+    path('api/', include('routers.urls')),
     path('api/auth/', include('users.urls')),
     path('api/portfolio/', include('portfolio.urls')),
 ]
