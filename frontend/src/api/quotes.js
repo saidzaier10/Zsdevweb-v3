@@ -1,100 +1,76 @@
 import apiClient from './axios'
 
-// ============================================================================
-// RÉCUPÉRATION DES DONNÉES DE CONFIGURATION
-// ============================================================================
-
+// Configuration des types de projets
 export const getProjectTypes = () => {
-  return apiClient.get('/api/project-types/')
+  return apiClient.get('/api/quotes/project-types/')
 }
 
 export const getDesignOptions = () => {
-  return apiClient.get('/api/design-options/')
+  return apiClient.get('/api/quotes/design-options/')
 }
 
 export const getComplexityLevels = () => {
-  return apiClient.get('/api/complexity-levels/')
+  return apiClient.get('/api/quotes/complexity-levels/')
 }
 
 export const getSupplementaryOptions = () => {
-  return apiClient.get('/api/supplementary-options/')
+  return apiClient.get('/api/quotes/supplementary-options/')
 }
 
-export const getQuoteTemplates = () => {
-  return apiClient.get('/api/quote-templates/')
-}
-
-// ============================================================================
-// GESTION DES DEVIS (ADMIN)
-// ============================================================================
-
-export const getQuotes = (status = null) => {
-  const params = status ? { status } : {}
-  return apiClient.get('/api/quotes/', { params })
-}
-
-export const getQuote = (id) => {
-  return apiClient.get(`/api/quotes/${id}/`)
-}
-
+// Gestion des devis
 export const createQuote = (quoteData) => {
-  return apiClient.post('/api/quotes/', quoteData)
+  return apiClient.post('/api/quotes/quotes/', quoteData)
 }
 
-export const updateQuote = (id, quoteData) => {
-  return apiClient.put(`/api/quotes/${id}/`, quoteData)
+// Récupérer tous les devis (admin uniquement)
+export const getAllQuotes = () => {
+  return apiClient.get('/api/quotes/quotes/')
 }
 
-export const deleteQuote = (id) => {
-  return apiClient.delete(`/api/quotes/${id}/`)
+// Récupérer les devis de l'utilisateur connecté
+export const getMyQuotes = (status = null) => {
+  const params = status ? { status } : {}
+  return apiClient.get('/api/quotes/quotes/my-quotes/', { params })
 }
 
-// ============================================================================
-// ACTIONS SUR LES DEVIS
-// ============================================================================
+// Récupérer un devis par ID
+export const getQuote = (id) => {
+  return apiClient.get(`/api/quotes/quotes/${id}/`)
+}
 
-export const downloadPDF = (id) => {
-  return apiClient.get(`/api/quotes/${id}/download-pdf/`, {
+// Récupérer un devis par token (pour signature publique)
+export const getQuoteByToken = (token) => {
+  return apiClient.get(`/api/quotes/quotes/public/${token}/`)
+}
+
+// Envoyer un devis par email
+export const sendQuote = (id) => {
+  return apiClient.post(`/api/quotes/quotes/${id}/send-email/`)
+}
+
+// Télécharger le PDF d'un devis
+export const downloadQuotePDF = (id) => {
+  return apiClient.get(`/api/quotes/quotes/${id}/download-pdf/`, {
     responseType: 'blob'
   })
 }
 
-export const sendEmail = (id) => {
-  return apiClient.post(`/api/quotes/${id}/send-email/`)
-}
-
-export const duplicateQuote = (id) => {
-  return apiClient.post(`/api/quotes/${id}/duplicate/`)
-}
-
-export const rejectQuote = (id, reason) => {
-  return apiClient.post(`/api/quotes/${id}/reject/`, { reason })
-}
-
-// ============================================================================
-// DEVIS PUBLICS (SANS AUTHENTIFICATION)
-// ============================================================================
-
-export const getPublicQuote = (token) => {
-  return apiClient.get(`/api/quotes/public/${token}/`)
-}
-
+// Signer un devis
 export const signQuote = (token, signatureData) => {
-  return apiClient.post(`/api/quotes/sign/${token}/`, signatureData)
+  return apiClient.post(`/api/quotes/quotes/sign/${token}/`, signatureData)
 }
 
-// ============================================================================
-// STATISTIQUES (ADMIN)
-// ============================================================================
-
-export const getQuoteStatistics = () => {
-  return apiClient.get('/api/quotes/statistics/')
+// Refuser un devis
+export const rejectQuote = (token) => {
+  return apiClient.post(`/api/quotes/quotes/reject/${token}/`)
 }
 
-// ============================================================================
-// COMPANY
-// ============================================================================
+// Dupliquer un devis
+export const duplicateQuote = (id) => {
+  return apiClient.post(`/api/quotes/quotes/${id}/duplicate/`)
+}
 
-export const getCompanyInfo = () => {
-  return apiClient.get('/api/company/')
+// Statistiques (admin uniquement)
+export const getStatistics = () => {
+  return apiClient.get('/api/quotes/quotes/statistics/')
 }
