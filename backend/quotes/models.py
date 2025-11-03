@@ -316,11 +316,8 @@ class Quote(models.Model):
         blank=True,
         verbose_name="Signé le"
     )
-    signer_name = models.CharField(
-        max_length=200,
-        blank=True,
-        verbose_name="Nom du signataire"
-    ),
+    signer_name = models.CharField(max_length=200, blank=True, null=True, verbose_name="Nom du signataire")
+
     client_ip = models.GenericIPAddressField(
         null=True,
         blank=True,
