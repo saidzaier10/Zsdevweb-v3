@@ -93,6 +93,11 @@ class QuoteListSerializer(serializers.ModelSerializer):
     complexity_level = ComplexityLevelSerializer(read_only=True)
     supplementary_options = SupplementaryOptionSerializer(many=True, read_only=True)
 
+    # Informations sur l'utilisateur créateur (pour les admins)
+    created_by_username = serializers.CharField(source='created_by.username', read_only=True)
+    created_by_email = serializers.CharField(source='created_by.email', read_only=True)
+    created_by_id = serializers.IntegerField(source='created_by.id', read_only=True)
+
     # Champs calculés
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     project_type_name = serializers.CharField(source='project_type.name', read_only=True)
@@ -107,7 +112,8 @@ class QuoteListSerializer(serializers.ModelSerializer):
             'design_option', 'complexity_level', 'supplementary_options',
             'status', 'status_display', 'total_ttc', 'total_price',
             'is_expired', 'created_at', 'expires_at', 'signature_token',
-            'pdf_file'  # Ajout du fichier PDF pour téléchargement
+            'pdf_file',  # Ajout du fichier PDF pour téléchargement
+            'created_by_username', 'created_by_email', 'created_by_id'  # Info utilisateur
         ]
 
 

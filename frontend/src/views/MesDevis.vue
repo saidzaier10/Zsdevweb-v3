@@ -3,8 +3,12 @@
     <div class="container mx-auto px-4 lg:px-8">
       <!-- En-tête -->
       <div class="mb-8">
-        <h1 class="text-4xl font-display font-bold gradient-text mb-2">Mes Devis</h1>
-        <p class="text-dark-600 dark:text-dark-300">Consultez et gérez vos demandes de devis</p>
+        <h1 class="text-4xl font-display font-bold gradient-text mb-2">
+          {{ isAdmin ? 'Tous les Devis' : 'Mes Devis' }}
+        </h1>
+        <p class="text-dark-600 dark:text-dark-300">
+          {{ isAdmin ? 'Gérez tous les devis de la plateforme' : 'Consultez et gérez vos demandes de devis' }}
+        </p>
       </div>
 
       <!-- Filtres -->
@@ -117,6 +121,13 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <!-- Admin uniquement : afficher le créateur du devis -->
+                  <div v-if="isAdmin && quote.created_by_username" class="flex items-center text-dark-600 dark:text-dark-300">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    Créé par: {{ quote.created_by_username }}
+                  </div>
                   <div class="flex items-center text-dark-600 dark:text-dark-300">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -196,15 +207,25 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getMyQuotes } from '../api/quotes'
 import { useToastStore } from '../stores/toast'
+import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
 const toastStore = useToastStore()
+const authStore = useAuthStore()
 
 const quotes = ref([])
 const loading = ref(true)
 const filterStatus = ref(null)
 
+const isAdmin = computed(() => {
+  return authStore.user?.is_staff || false
+})
+
 const filteredQuotes = computed(() => {
+  if (!Array.isArray(quotes.value)) {
+    console.error('filteredQuotes: quotes.value is not an array!', quotes.value)
+    return []
+  }
   if (filterStatus.value === null) {
     return quotes.value
   }
@@ -212,6 +233,10 @@ const filteredQuotes = computed(() => {
 })
 
 const countByStatus = (status) => {
+  if (!Array.isArray(quotes.value)) {
+    console.error('countByStatus: quotes.value is not an array!', quotes.value)
+    return 0
+  }
   return quotes.value.filter(q => q.status === status).length
 }
 
@@ -256,10 +281,25 @@ const loadQuotes = async () => {
   try {
     loading.value = true
     const response = await getMyQuotes()
-    quotes.value = response.data
+    console.log('Response from API:', response.data)
+    console.log('Is array?', Array.isArray(response.data))
+    console.log('Type:', typeof response.data)
+
+    // Handle both paginated and non-paginated responses
+    if (Array.isArray(response.data)) {
+      quotes.value = response.data
+    } else if (response.data && response.data.results) {
+      quotes.value = response.data.results
+    } else {
+      console.error('Unexpected response format:', response.data)
+      quotes.value = []
+    }
+
+    console.log('Final quotes.value:', quotes.value)
   } catch (error) {
     console.error('Erreur lors du chargement des devis:', error)
     toastStore.showToast('Erreur lors du chargement des devis', 'error')
+    quotes.value = []
   } finally {
     loading.value = false
   }

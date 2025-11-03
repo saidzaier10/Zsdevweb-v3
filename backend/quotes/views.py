@@ -116,6 +116,7 @@ class QuoteViewSet(viewsets.ModelViewSet):
         'complexity_level',
         'template'
     ).prefetch_related('supplementary_options')
+    pagination_class = None  # Désactiver la pagination par défaut
     
     def get_serializer_class(self):
         """Choisir le serializer selon l'action"""
@@ -191,18 +192,32 @@ class QuoteViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def my_quotes(self, request):
-        """Récupère les devis créés par l'utilisateur connecté
+        """Récupère les devis de l'utilisateur connecté
+
+        - Pour les admins : retourne TOUS les devis de tous les utilisateurs
+        - Pour les utilisateurs normaux : retourne uniquement leurs propres devis
 
         GET /api/quotes/my-quotes/
         GET /api/quotes/my-quotes/?status=sent
+        GET /api/quotes/my-quotes/?user_id=5  (admin uniquement)
         """
-        # CHANGEMENT : Filtre par created_by au lieu de client_email
-        queryset = Quote.objects.filter(
-            created_by=request.user
-        ).select_related(
+        # Les admins voient tous les devis, les autres uniquement les leurs
+        if request.user.is_staff:
+            queryset = Quote.objects.all()
+
+            # Filtrer par utilisateur spécifique si demandé (admin uniquement)
+            user_id = request.query_params.get('user_id', None)
+            if user_id:
+                queryset = queryset.filter(created_by_id=user_id)
+        else:
+            # Utilisateurs normaux : seulement leurs devis
+            queryset = Quote.objects.filter(created_by=request.user)
+
+        queryset = queryset.select_related(
             'project_type',
             'design_option',
-            'complexity_level'
+            'complexity_level',
+            'created_by'
         ).prefetch_related('supplementary_options').order_by('-created_at')
 
         # Filtrer par statut si demandé
