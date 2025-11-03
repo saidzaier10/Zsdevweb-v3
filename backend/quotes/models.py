@@ -316,6 +316,11 @@ class Quote(models.Model):
         blank=True,
         verbose_name="Signé le"
     )
+    signer_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Nom du signataire"
+    ),
     client_ip = models.GenericIPAddressField(
         null=True,
         blank=True,
@@ -359,6 +364,7 @@ class Quote(models.Model):
     viewed_at = models.DateTimeField(null=True, blank=True, verbose_name="Consulté le")
     accepted_at = models.DateTimeField(null=True, blank=True, verbose_name="Accepté le")
     rejected_at = models.DateTimeField(null=True, blank=True, verbose_name="Refusé le")
+    rejection_reason = models.TextField(blank=True, verbose_name="Raison du refus")
 
     class Meta:
         ordering = ['-created_at']

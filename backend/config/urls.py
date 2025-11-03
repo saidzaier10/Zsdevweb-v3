@@ -1,27 +1,16 @@
+from django.contrib import admin
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-
-from .views import (
-    CompanyViewSet,
-    ProjectTypeViewSet,
-    DesignOptionViewSet,
-    ComplexityLevelViewSet,
-    SupplementaryOptionViewSet,
-    QuoteTemplateViewSet,
-    QuoteViewSet,
-    QuoteEmailLogViewSet,
-)
-
-router = DefaultRouter()
-router.register(r'company', CompanyViewSet, basename='company')
-router.register(r'project-types', ProjectTypeViewSet, basename='projecttype')
-router.register(r'design-options', DesignOptionViewSet, basename='designoption')
-router.register(r'complexity-levels', ComplexityLevelViewSet, basename='complexitylevel')
-router.register(r'supplementary-options', SupplementaryOptionViewSet, basename='supplementaryoption')
-router.register(r'quote-templates', QuoteTemplateViewSet, basename='quotetemplate')
-router.register(r'quotes', QuoteViewSet, basename='quote')
-router.register(r'quote-email-logs', QuoteEmailLogViewSet, basename='quoteemaillog')
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('admin/', admin.site.urls),
+    path('api/users/', include('users.urls')),
+    path('api/quotes/', include('quotes.urls')),
+    path('api/portfolio/', include('portfolio.urls')),
 ]
+
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
