@@ -146,13 +146,32 @@ class QuoteViewSet(viewsets.ModelViewSet):
         return queryset.none()
     
     def create(self, request, *args, **kwargs):
-        """Créer un devis et envoyer l'email"""
+        """Créer un devis, générer le PDF et envoyer l'email"""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         quote = serializer.save()
-        
-        # Envoyer l'email de création
+
+        # Générer le PDF automatiquement
+        try:
+            from django.core.files.base import ContentFile
+
+            generator = QuotePDFGenerator(quote)
+            pdf_buffer = generator.generate()
+            pdf_content = pdf_buffer.getvalue()
+
+            # Sauvegarder le PDF dans le modèle
+            quote.pdf_file.save(
+                f'devis_{quote.quote_number}.pdf',
+                ContentFile(pdf_content),
+                save=True
+            )
+            print(f"✅ PDF généré avec succès: devis_{quote.quote_number}.pdf")
+        except Exception as e:
+            print(f"❌ Erreur génération PDF: {e}")
+            # On continue même si la génération du PDF échoue
+
+        # Envoyer l'email de création avec le PDF en pièce jointe
         try:
             send_quote_created_email(quote)
             quote.status = 'sent'
@@ -160,9 +179,9 @@ class QuoteViewSet(viewsets.ModelViewSet):
             quote.save(update_fields=['status', 'sent_at'])
         except Exception as e:
             print(f"Erreur envoi email: {e}")
-        
+
         detail_serializer = QuoteDetailSerializer(quote, context={'request': request})
-        
+
         return Response(
             detail_serializer.data,
             status=status.HTTP_201_CREATED

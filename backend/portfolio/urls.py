@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import TechnologyViewSet, ProjectViewSet, TestimonialViewSet
+from .views import TechnologyViewSet, ProjectViewSet, TestimonialViewSet, statistics
 
 router = DefaultRouter()
 router.register(r'technologies', TechnologyViewSet, basename='technology')
@@ -9,4 +9,5 @@ router.register(r'testimonials', TestimonialViewSet, basename='testimonial')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('statistics/', statistics, name='portfolio-statistics'),
 ]

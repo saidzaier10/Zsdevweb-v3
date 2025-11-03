@@ -106,7 +106,8 @@ class QuoteListSerializer(serializers.ModelSerializer):
             'company_name', 'project_type', 'project_type_name',
             'design_option', 'complexity_level', 'supplementary_options',
             'status', 'status_display', 'total_ttc', 'total_price',
-            'is_expired', 'created_at', 'expires_at', 'signature_token'
+            'is_expired', 'created_at', 'expires_at', 'signature_token',
+            'pdf_file'  # Ajout du fichier PDF pour téléchargement
         ]
 
 

@@ -69,7 +69,14 @@ def send_quote_email(quote, email_type='created', context=None):
         to=[quote.client_email],
     )
     email.attach_alternative(html_content, "text/html")
-    
+
+    # Attacher le PDF si disponible (pour les devis créés ou rappels)
+    if email_type in ['created', 'reminder'] and quote.pdf_file:
+        try:
+            email.attach_file(quote.pdf_file.path)
+        except Exception as e:
+            print(f"⚠️ Impossible d'attacher le PDF: {e}")
+
     # Envoyer
     try:
         email.send()

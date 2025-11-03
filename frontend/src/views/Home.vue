@@ -182,21 +182,28 @@
     <!-- Stats Section -->
     <section class="py-20 bg-gradient-to-br from-primary-600 to-secondary-600 dark:from-primary-900 dark:to-secondary-900 text-white">
       <div class="container mx-auto px-4">
-        <div class="grid md:grid-cols-4 gap-8 text-center">
+        <!-- Chargement -->
+        <div v-if="statsLoading" class="text-center">
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+          <p class="mt-4 text-primary-100">Chargement des statistiques...</p>
+        </div>
+
+        <!-- Statistiques -->
+        <div v-else class="grid md:grid-cols-4 gap-8 text-center">
           <div>
-            <div class="text-5xl font-bold mb-2">50+</div>
+            <div class="text-5xl font-bold mb-2">{{ stats.total_projects }}+</div>
             <div class="text-primary-100 dark:text-primary-200 text-lg">Projets réalisés</div>
           </div>
           <div>
-            <div class="text-5xl font-bold mb-2">30+</div>
+            <div class="text-5xl font-bold mb-2">{{ stats.total_clients }}+</div>
             <div class="text-primary-100 dark:text-primary-200 text-lg">Clients satisfaits</div>
           </div>
           <div>
-            <div class="text-5xl font-bold mb-2">5+</div>
+            <div class="text-5xl font-bold mb-2">{{ stats.years_experience }}+</div>
             <div class="text-primary-100 dark:text-primary-200 text-lg">Années d'expérience</div>
           </div>
           <div>
-            <div class="text-5xl font-bold mb-2">100%</div>
+            <div class="text-5xl font-bold mb-2">{{ stats.satisfaction_rate }}%</div>
             <div class="text-primary-100 dark:text-primary-200 text-lg">Satisfaction client</div>
           </div>
         </div>
@@ -224,4 +231,31 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
+import { getStatistics } from '../api/portfolio'
+
+const stats = ref({
+  total_projects: 0,
+  total_clients: 0,
+  satisfaction_rate: 0,
+  years_experience: 0
+})
+const statsLoading = ref(true)
+
+const loadStatistics = async () => {
+  try {
+    statsLoading.value = true
+    const response = await getStatistics()
+    stats.value = response.data
+  } catch (error) {
+    console.error('Erreur lors du chargement des statistiques:', error)
+    // En cas d'erreur, on garde les valeurs par défaut à 0
+  } finally {
+    statsLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadStatistics()
+})
 </script>

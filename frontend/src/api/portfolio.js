@@ -15,3 +15,7 @@ export const getProject = (slug) => {
 export const getTestimonials = () => {
   return apiClient.get('/api/portfolio/testimonials/')
 }
+
+export const getStatistics = () => {
+  return apiClient.get('/api/portfolio/statistics/')
+}
