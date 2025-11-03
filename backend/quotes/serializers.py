@@ -244,15 +244,6 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
         # Créer l'instance (sans les options supplémentaires pour l'instant)
         quote = Quote.objects.create(**validated_data)
 
-        # Créer l'instance (sans les options supplémentaires pour l'instant)
-        quote = Quote.objects.create(**validated_data)
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            validated_data['created_by'] = request.user
-
-        # Créer l'instance (sans les options supplémentaires pour l'instant)
-        quote = Quote.objects.create(**validated_data)
-
 
         # Ajouter les options supplémentaires
         if supplementary_options:

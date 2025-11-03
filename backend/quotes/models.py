@@ -365,6 +365,12 @@ class Quote(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status', '-created_at']),
+            models.Index(fields=['created_by', '-created_at']),
+            models.Index(fields=['signature_token']),
+            models.Index(fields=['quote_number']),
+        ]
         verbose_name = "Devis"
         verbose_name_plural = "Devis"
 

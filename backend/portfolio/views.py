@@ -23,8 +23,8 @@ class TechnologyViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ProjectViewSet(viewsets.ReadOnlyModelViewSet):
-    """API endpoint pour les projets"""
-    queryset = Project.objects.filter(is_published=True)
+    """API endpoint pour les projets - optimisé avec prefetch_related"""
+    queryset = Project.objects.filter(is_published=True).prefetch_related('technologies')
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['featured']
     search_fields = ['title', 'description']

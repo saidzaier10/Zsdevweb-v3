@@ -65,6 +65,11 @@ class Project(models.Model):
 
     class Meta:
         ordering = ['order', '-completion_date']
+        indexes = [
+            models.Index(fields=['slug']),
+            models.Index(fields=['is_published', 'featured']),
+            models.Index(fields=['is_published', 'order']),
+        ]
         verbose_name = "Projet"
         verbose_name_plural = "Projets"
 

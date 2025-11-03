@@ -116,7 +116,7 @@ class QuoteViewSet(viewsets.ModelViewSet):
         'complexity_level',
         'template'
     ).prefetch_related('supplementary_options')
-    pagination_class = None  # Désactiver la pagination par défaut
+    # pagination_class = None  # Pagination activée pour de meilleures performances
     
     def get_serializer_class(self):
         """Choisir le serializer selon l'action"""
