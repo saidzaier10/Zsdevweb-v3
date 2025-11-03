@@ -1,9 +1,16 @@
 <template>
   <div class="min-h-screen bg-white dark:bg-dark-900 transition-colors duration-200">
     <Navbar />
-    <router-view />
+
+    <!-- Router view with page transitions -->
+    <router-view v-slot="{ Component, route }">
+      <transition name="page" mode="out-in">
+        <component :is="Component" :key="route.path" />
+      </transition>
+    </router-view>
+
     <Footer />
-    
+
     <!-- Toast Container -->
     <div class="fixed top-4 right-4 z-50 space-y-3">
       <Toast

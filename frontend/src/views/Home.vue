@@ -2,15 +2,27 @@
   <div class="min-h-screen bg-white dark:bg-dark-900 transition-colors duration-200">
     <!-- Hero Section -->
     <section class="relative bg-gradient-to-br from-primary-600 via-primary-700 to-secondary-600 dark:from-primary-900 dark:via-primary-800 dark:to-secondary-900 text-white py-24 md:py-32 overflow-hidden">
-      <!-- Animated Background Blobs -->
-      <div class="absolute inset-0 overflow-hidden opacity-20">
-        <div class="absolute -top-1/2 -left-1/4 w-96 h-96 bg-secondary-400 dark:bg-secondary-700 rounded-full blur-3xl animate-bounce-slow"></div>
-        <div class="absolute -bottom-1/2 -right-1/4 w-96 h-96 bg-primary-400 dark:bg-primary-700 rounded-full blur-3xl animate-bounce-slow" style="animation-delay: 1s;"></div>
+      <!-- Video Background -->
+      <div class="absolute inset-0 w-full h-full overflow-hidden hero-video-container">
+        <!-- Fallback: Animated Blobs (affichés si vidéo ne charge pas) -->
+        <div class="absolute inset-0 hero-fallback transition-opacity duration-300">
+          <div class="absolute -top-1/2 -left-1/4 w-96 h-96 bg-secondary-400 dark:bg-secondary-700 rounded-full blur-3xl animate-bounce-slow opacity-30"></div>
+          <div class="absolute -bottom-1/2 -right-1/4 w-96 h-96 bg-primary-400 dark:bg-primary-700 rounded-full blur-3xl animate-bounce-slow opacity-30" style="animation-delay: 1s;"></div>
+        </div>
+
+        <!-- Overlay gradient pour maintenir la lisibilité -->
+        <div class="absolute inset-0 bg-gradient-to-br from-primary-900/85 via-primary-800/75 to-secondary-900/85 dark:from-primary-950/92 dark:via-primary-900/85 dark:to-secondary-950/92 z-10"></div>
+
+        <!-- Animated overlay pattern (optionnel - pour effet dynamique) -->
+        <div class="absolute inset-0 opacity-10 z-20">
+          <div class="absolute -top-1/2 -left-1/4 w-96 h-96 bg-secondary-400 dark:bg-secondary-700 rounded-full blur-3xl animate-bounce-slow"></div>
+          <div class="absolute -bottom-1/2 -right-1/4 w-96 h-96 bg-primary-400 dark:bg-primary-700 rounded-full blur-3xl animate-bounce-slow" style="animation-delay: 1s;"></div>
+        </div>
       </div>
 
       <div class="container mx-auto px-4 relative z-10">
         <div class="max-w-4xl mx-auto text-center">
-          <h1 class="text-5xl md:text-7xl font-display font-bold mb-6 animate-fade-in">
+          <h1 class="text-5xl md:text-7xl font-display font-bold mb-6 animate-fade-in-slow">
             Créons ensemble votre
             <span class="block bg-gradient-to-r from-secondary-300 to-white bg-clip-text text-transparent">
               présence digitale
@@ -234,6 +246,63 @@
 import { ref, onMounted } from 'vue'
 import { getStatistics } from '../api/portfolio'
 
+// Référence pour la vidéo
+const heroVideo = ref(null)
+
+// Fonction pour créer et insérer la vidéo dynamiquement
+const loadVideo = () => {
+  const container = document.querySelector('.hero-video-container')
+  if (!container) {
+    console.error('Conteneur vidéo non trouvé')
+    return
+  }
+
+  // Créer l'élément vidéo
+  const video = document.createElement('video')
+  video.autoplay = true
+  video.muted = true
+  video.loop = true
+  video.playsInline = true
+  video.setAttribute('playsinline', 'true') // Important pour iOS
+  video.className = 'absolute inset-0 w-full h-full object-cover'
+  video.style.cssText = 'z-index: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;'
+
+  // Créer et ajouter la source
+  const source = document.createElement('source')
+  source.src = '/videos/hero-background.mp4'
+  source.type = 'video/mp4'
+  video.appendChild(source)
+
+  // Événement: vidéo prête
+  video.addEventListener('loadeddata', () => {
+    console.log('✅ Vidéo chargée et prête')
+    video.playbackRate = 0.5
+    video.play().then(() => {
+      console.log('✅ Lecture vidéo démarrée à vitesse 0.5x')
+      // Masquer le fallback
+      const fallback = document.querySelector('.hero-fallback')
+      if (fallback) {
+        fallback.style.opacity = '0'
+        setTimeout(() => { fallback.style.display = 'none' }, 300)
+      }
+    }).catch(err => {
+      console.error('❌ Erreur lors du démarrage de la lecture:', err)
+    })
+  })
+
+  // Événement: erreur
+  video.addEventListener('error', (e) => {
+    console.error('❌ Erreur de chargement de la vidéo:', e)
+    console.error('Détails:', video.error)
+  })
+
+  // Insérer la vidéo au début du conteneur
+  container.insertBefore(video, container.firstChild)
+  heroVideo.value = video
+
+  console.log('📹 Élément vidéo créé et inséré dans le DOM')
+}
+
 const stats = ref({
   total_projects: 0,
   total_clients: 0,
@@ -255,7 +324,13 @@ const loadStatistics = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // Charger les statistiques
   loadStatistics()
+
+  // Charger la vidéo de fond
+  setTimeout(() => {
+    loadVideo()
+  }, 100)
 })
 </script>
