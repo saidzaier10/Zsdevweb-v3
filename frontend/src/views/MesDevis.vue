@@ -281,9 +281,6 @@ const loadQuotes = async () => {
   try {
     loading.value = true
     const response = await getMyQuotes()
-    console.log('Response from API:', response.data)
-    console.log('Is array?', Array.isArray(response.data))
-    console.log('Type:', typeof response.data)
 
     // Handle both paginated and non-paginated responses
     if (Array.isArray(response.data)) {
@@ -291,11 +288,9 @@ const loadQuotes = async () => {
     } else if (response.data && response.data.results) {
       quotes.value = response.data.results
     } else {
-      console.error('Unexpected response format:', response.data)
+      console.error('Format de réponse inattendu:', response.data)
       quotes.value = []
     }
-
-    console.log('Final quotes.value:', quotes.value)
   } catch (error) {
     console.error('Erreur lors du chargement des devis:', error)
     toastStore.showToast('Erreur lors du chargement des devis', 'error')
