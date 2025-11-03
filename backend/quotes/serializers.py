@@ -219,10 +219,13 @@ class QuoteCreateSerializer(serializers.ModelSerializer):
         # Extraire les options supplémentaires (relation M2M)
         supplementary_options = validated_data.pop('supplementary_options', [])
 
-        # Récupérer l'utilisateur connecté depuis le contexte
+        # AJOUT : Récupérer l'utilisateur connecté depuis le contexte
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             validated_data['created_by'] = request.user
+
+        # Créer l'instance (sans les options supplémentaires pour l'instant)
+        quote = Quote.objects.create(**validated_data)
 
         # Créer l'instance (sans les options supplémentaires pour l'instant)
         quote = Quote.objects.create(**validated_data)

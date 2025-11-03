@@ -168,29 +168,29 @@ class QuoteViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED
         )
     
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
-    def my_quotes(self, request):
-        """Récupère les devis créés par l'utilisateur connecté
-        
-        GET /api/quotes/my-quotes/
-        GET /api/quotes/my-quotes/?status=sent
-        """
-        # Récupérer tous les devis créés par l'utilisateur
-        queryset = Quote.objects.filter(
-            created_by=request.user
-        ).select_related(
-            'project_type',
-            'design_option',
-            'complexity_level'
-        ).prefetch_related('supplementary_options').order_by('-created_at')
-        
-        # Filtrer par statut si demandé
-        status_filter = request.query_params.get('status', None)
-        if status_filter:
-            queryset = queryset.filter(status=status_filter)
-        
-        serializer = QuoteListSerializer(queryset, many=True)
-        return Response(serializer.data)
+@action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+def my_quotes(self, request):
+    """Récupère les devis créés par l'utilisateur connecté
+
+    GET /api/quotes/my-quotes/
+    GET /api/quotes/my-quotes/?status=sent
+    """
+    # CHANGEMENT : Filtre par created_by au lieu de client_email
+    queryset = Quote.objects.filter(
+        created_by=request.user  # AVANT : client_email=request.user.email
+    ).select_related(
+        'project_type',
+        'design_option',
+        'complexity_level'
+    ).prefetch_related('supplementary_options').order_by('-created_at')
+
+    # Filtrer par statut si demandé
+    status_filter = request.query_params.get('status', None)
+    if status_filter:
+        queryset = queryset.filter(status=status_filter)
+
+    serializer = QuoteListSerializer(queryset, many=True)
+    return Response(serializer.data)
     
     @action(detail=True, methods=['get'], url_path='download-pdf')
     def download_pdf(self, request, pk=None):
