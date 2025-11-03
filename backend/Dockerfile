@@ -14,6 +14,12 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     musl-dev \
     libpq-dev \
+    # Dépendances pour WeasyPrint
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libgdk-pixbuf-2.0-0 \
+    libffi-dev \
+    shared-mime-info \
     && rm -rf /var/lib/apt/lists/*
 
 # Copier les requirements

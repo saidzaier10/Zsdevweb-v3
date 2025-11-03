@@ -33,7 +33,7 @@ from .serializers import (
     QuoteEmailLogSerializer,
     QuoteStatisticsSerializer
 )
-from .pdf_generator import QuotePDFGenerator
+from .pdf_generator_weasy import QuotePDFGeneratorWeasy
 from .emails import (
     send_quote_created_email,
     send_quote_accepted_email,
@@ -152,11 +152,11 @@ class QuoteViewSet(viewsets.ModelViewSet):
 
         quote = serializer.save()
 
-        # Générer le PDF automatiquement
+        # Générer le PDF automatiquement avec WeasyPrint
         try:
             from django.core.files.base import ContentFile
 
-            generator = QuotePDFGenerator(quote)
+            generator = QuotePDFGeneratorWeasy(quote)
             pdf_buffer = generator.generate()
             pdf_content = pdf_buffer.getvalue()
 
@@ -166,9 +166,11 @@ class QuoteViewSet(viewsets.ModelViewSet):
                 ContentFile(pdf_content),
                 save=True
             )
-            print(f"✅ PDF généré avec succès: devis_{quote.quote_number}.pdf")
+            print(f"✅ PDF généré avec succès (WeasyPrint): devis_{quote.quote_number}.pdf")
         except Exception as e:
-            print(f"❌ Erreur génération PDF: {e}")
+            print(f"❌ Erreur génération PDF (WeasyPrint): {e}")
+            import traceback
+            traceback.print_exc()
             # On continue même si la génération du PDF échoue
 
         # Envoyer l'email de création avec le PDF en pièce jointe
@@ -215,10 +217,10 @@ class QuoteViewSet(viewsets.ModelViewSet):
     def download_pdf(self, request, pk=None):
         """Télécharger le PDF du devis"""
         quote = self.get_object()
-        
-        generator = QuotePDFGenerator(quote)
+
+        generator = QuotePDFGeneratorWeasy(quote)
         pdf_buffer = generator.generate()
-        
+
         from django.core.files.base import ContentFile
         pdf_content = pdf_buffer.getvalue()
         quote.pdf_file.save(

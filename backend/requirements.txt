@@ -6,7 +6,8 @@ djangorestframework-simplejwt==5.3.1
 django-cors-headers==4.3.1
 Pillow==10.4.0
 gunicorn==21.2.0
-reportlab==4.2.0 #
+reportlab==4.2.0  # Ancienne bibliothèque PDF (peut être supprimée)
+weasyprint==62.3  # Nouvelle bibliothèque PDF (HTML vers PDF)
 django-filter==24.3
 # Rate Limiting
 django-ratelimit==4.1.0
