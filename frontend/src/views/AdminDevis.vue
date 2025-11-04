@@ -138,7 +138,7 @@
                 </td>
                 <td class="px-6 py-4">
                   <div class="text-sm text-dark-800 dark:text-dark-100">
-                    {{ quote.project_type.name }}
+                    {{ quote.project_type?.name || 'N/A' }}
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -146,7 +146,7 @@
                     <div class="font-semibold text-dark-800 dark:text-dark-100">
                       {{ quote.total_price }} €
                     </div>
-                    <div v-if="quote.discount_amount > 0" class="text-xs text-green-600 dark:text-green-400">
+                    <div v-if="quote.discount_amount && quote.discount_amount > 0" class="text-xs text-green-600 dark:text-green-400">
                       Remise: -{{ quote.discount_amount }}€
                     </div>
                   </div>
@@ -532,10 +532,20 @@ const downloadPDF = async (quoteId, quoteNumber) => {
 const loadQuotes = async () => {
   try {
     const response = await getAllQuotes()
-    quotes.value = response.data
+
+    // Handle both paginated and non-paginated responses
+    if (Array.isArray(response.data)) {
+      quotes.value = response.data
+    } else if (response.data && response.data.results) {
+      quotes.value = response.data.results
+    } else {
+      console.error('Format de réponse inattendu:', response.data)
+      quotes.value = []
+    }
   } catch (error) {
     console.error('Erreur lors du chargement des devis:', error)
     toastStore.showToast('Erreur lors du chargement des devis', 'error')
+    quotes.value = []
   }
 }
 

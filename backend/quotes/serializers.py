@@ -94,9 +94,9 @@ class QuoteListSerializer(serializers.ModelSerializer):
     supplementary_options = SupplementaryOptionSerializer(many=True, read_only=True)
 
     # Informations sur l'utilisateur créateur (pour les admins)
-    created_by_username = serializers.CharField(source='created_by.username', read_only=True)
-    created_by_email = serializers.CharField(source='created_by.email', read_only=True)
-    created_by_id = serializers.IntegerField(source='created_by.id', read_only=True)
+    created_by_username = serializers.CharField(source='created_by.username', read_only=True, allow_null=True)
+    created_by_email = serializers.CharField(source='created_by.email', read_only=True, allow_null=True)
+    created_by_id = serializers.IntegerField(source='created_by.id', read_only=True, allow_null=True)
 
     # Champs calculés
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -113,7 +113,8 @@ class QuoteListSerializer(serializers.ModelSerializer):
             'status', 'status_display', 'total_ttc', 'total_price',
             'is_expired', 'created_at', 'expires_at', 'signature_token',
             'pdf_file',  # Ajout du fichier PDF pour téléchargement
-            'created_by_username', 'created_by_email', 'created_by_id'  # Info utilisateur
+            'created_by_username', 'created_by_email', 'created_by_id',  # Info utilisateur
+            'discount_type', 'discount_value', 'discount_reason', 'discount_amount'  # Remises
         ]
 
 

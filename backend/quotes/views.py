@@ -213,7 +213,7 @@ class QuoteViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED
         )
 
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated], url_path='my-quotes')
     def my_quotes(self, request):
         """Récupère les devis de l'utilisateur connecté
 
