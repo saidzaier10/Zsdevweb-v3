@@ -1,6 +1,10 @@
 """
 API Views pour les devis - Version complète avec emails
 """
+import base64
+import binascii
+import uuid
+
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -11,6 +15,7 @@ from django.db.models import Count, Sum, Avg, Q
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from datetime import timedelta
+from django.core.files.base import ContentFile
 
 from .models import (
     Company,
@@ -318,17 +323,46 @@ class QuoteViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        signature_data = request.data.get('signature')
-        signer_name = request.data.get('signer_name')
+        signature_data = request.data.get('signature') or request.data.get('signature_data')
+        signer_name = request.data.get('signer_name') or request.data.get('signature_name')
         terms_accepted = request.data.get('terms_accepted', False)
+
+        if isinstance(terms_accepted, str):
+            terms_accepted = terms_accepted.lower() in ('true', '1', 'yes', 'on')
+        else:
+            terms_accepted = bool(terms_accepted)
         
         if not signature_data or not signer_name or not terms_accepted:
             return Response(
                 {'error': 'Données de signature incomplètes'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        quote.signature_image = signature_data
+
+        # Décoder l'image base64 et l'enregistrer correctement dans le FileField
+        try:
+            if ';base64,' in signature_data:
+                header, encoded = signature_data.split(';base64,', 1)
+                file_ext = header.split('/')[-1].lower()
+            else:
+                encoded = signature_data
+                file_ext = 'png'
+
+            decoded_image = base64.b64decode(encoded)
+        except (ValueError, TypeError, binascii.Error):
+            return Response(
+                {'error': 'Signature invalide'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        allowed_ext = {'png', 'jpg', 'jpeg', 'webp'}
+        file_ext = file_ext if file_ext in allowed_ext else 'png'
+        signature_filename = f"signature_{quote.quote_number or quote.id}_{uuid.uuid4().hex[:8]}.{file_ext}"
+
+        quote.signature_image.save(
+            signature_filename,
+            ContentFile(decoded_image),
+            save=False
+        )
         quote.signer_name = signer_name
         quote.signed_at = timezone.now()
         quote.accepted_at = timezone.now()

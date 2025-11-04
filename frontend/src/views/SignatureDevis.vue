@@ -285,8 +285,9 @@ const submitSignature = async () => {
     const signatureData = signatureCanvas.value.toDataURL('image/png')
 
     await signQuote(route.params.token, {
-      signature_name: signatureName.value,
-      signature_data: signatureData
+      signer_name: signatureName.value,
+      signature: signatureData,
+      terms_accepted: acceptTerms.value
     })
 
     toastStore.showToast('Devis signé avec succès !', 'success')
@@ -311,7 +312,11 @@ const rejectQuote = async () => {
 
   try {
     submitting.value = true
-    await rejectQuoteAPI(route.params.token)
+    if (!quote.value) {
+      throw new Error('Quote introuvable')
+    }
+
+    await rejectQuoteAPI(quote.value.id)
     toastStore.showToast('Devis refusé', 'info')
 
     setTimeout(() => {

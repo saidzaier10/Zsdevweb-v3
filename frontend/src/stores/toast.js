@@ -5,17 +5,9 @@ export const useToastStore = defineStore('toast', () => {
   const toasts = ref([])
   let nextId = 1
 
-  /**
-   * Affiche une notification toast
-   * @param {string} type - Type de notification (success, error, warning, info)
-   * @param {string} title - Titre de la notification
-   * @param {string} message - Message optionnel
-   * @param {number} duration - Durée d'affichage en ms (0 = permanent)
-   * @returns {number} ID du toast créé
-   */
-  const show = (type, title, message = '', duration = 5000) => {
+  const addToast = ({ type = 'info', title = '', message = '', duration = 5000 }) => {
     const id = nextId++
-    
+
     toasts.value.push({
       id,
       type,
@@ -28,75 +20,57 @@ export const useToastStore = defineStore('toast', () => {
   }
 
   /**
-   * Affiche une notification de succès
-   * @param {string} title - Titre de la notification
-   * @param {string} message - Message optionnel
-   * @param {number} duration - Durée d'affichage en ms
-   * @returns {number} ID du toast créé
+   * Alias compatible avec l'ancien usage (type, title, message, duration)
    */
-  const success = (title, message = '', duration = 5000) => {
-    return show('success', title, message, duration)
+  const show = (type, title, message = '', duration = 5000) => {
+    return addToast({ type, title, message, duration })
   }
 
   /**
-   * Affiche une notification d'erreur
-   * @param {string} title - Titre de la notification
-   * @param {string} message - Message optionnel
-   * @param {number} duration - Durée d'affichage en ms
-   * @returns {number} ID du toast créé
+   * Nouvelle API : toastStore.showToast(message, type?, options?)
    */
-  const error = (title, message = '', duration = 7000) => {
-    return show('error', title, message, duration)
+  const showToast = (message, type = 'info', options = {}) => {
+    const opts = typeof options === 'object' && options !== null ? options : {}
+    const duration = opts.duration ?? opts.timeout ?? 5000
+    const title = opts.title ?? message
+    const description = opts.description ?? opts.message ?? (opts.title ? message : '')
+
+    return addToast({
+      type,
+      title,
+      message: description,
+      duration
+    })
   }
 
-  /**
-   * Affiche une notification d'avertissement
-   * @param {string} title - Titre de la notification
-   * @param {string} message - Message optionnel
-   * @param {number} duration - Durée d'affichage en ms
-   * @returns {number} ID du toast créé
-   */
-  const warning = (title, message = '', duration = 6000) => {
-    return show('warning', title, message, duration)
-  }
+  const success = (title, message = '', duration = 5000) => addToast({ type: 'success', title, message, duration })
+  const error = (title, message = '', duration = 7000) => addToast({ type: 'error', title, message, duration })
+  const warning = (title, message = '', duration = 6000) => addToast({ type: 'warning', title, message, duration })
+  const info = (title, message = '', duration = 5000) => addToast({ type: 'info', title, message, duration })
 
-  /**
-   * Affiche une notification d'information
-   * @param {string} title - Titre de la notification
-   * @param {string} message - Message optionnel
-   * @param {number} duration - Durée d'affichage en ms
-   * @returns {number} ID du toast créé
-   */
-  const info = (title, message = '', duration = 5000) => {
-    return show('info', title, message, duration)
-  }
-
-  /**
-   * Supprime une notification toast
-   * @param {number} id - ID du toast à supprimer
-   */
   const remove = (id) => {
-    const index = toasts.value.findIndex(t => t.id === id)
+    const index = toasts.value.findIndex((t) => t.id === id)
     if (index !== -1) {
       toasts.value.splice(index, 1)
     }
   }
 
-  /**
-   * Supprime toutes les notifications
-   */
   const clear = () => {
     toasts.value = []
   }
 
+  const removeToast = remove
+
   return {
     toasts,
     show,
+    showToast,
     success,
     error,
     warning,
     info,
     remove,
+    removeToast,
     clear
   }
 })

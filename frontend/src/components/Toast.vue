@@ -23,8 +23,15 @@
 
       <!-- Content -->
       <div class="flex-1 min-w-0">
-        <p class="font-semibold text-sm">{{ title }}</p>
-        <p v-if="message" class="text-sm mt-1 opacity-90">{{ message }}</p>
+        <p class="font-semibold text-sm">
+          {{ title || message || 'Notification' }}
+        </p>
+        <p
+          v-if="message && message !== title"
+          class="text-sm mt-1 opacity-90"
+        >
+          {{ message }}
+        </p>
       </div>
 
       <!-- Close button -->
@@ -51,7 +58,7 @@ const props = defineProps({
   },
   title: {
     type: String,
-    required: true
+    default: ''
   },
   message: {
     type: String,

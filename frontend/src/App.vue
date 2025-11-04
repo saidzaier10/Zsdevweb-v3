@@ -17,6 +17,7 @@
         v-for="toast in toasts"
         :key="toast.id"
         :type="toast.type"
+        :title="toast.title"
         :message="toast.message"
         @close="removeToast(toast.id)"
       />

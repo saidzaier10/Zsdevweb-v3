@@ -30,7 +30,7 @@ export const getAllQuotes = () => {
 // Récupérer les devis de l'utilisateur connecté
 export const getMyQuotes = (status = null) => {
   const params = status ? { status } : {}
-  return apiClient.get('/api/quotes/quotes/my_quotes/', { params })
+  return apiClient.get('/api/quotes/quotes/my-quotes/', { params })
 }
 
 // Récupérer un devis par ID
@@ -60,9 +60,9 @@ export const signQuote = (token, signatureData) => {
   return apiClient.post(`/api/quotes/quotes/sign/${token}/`, signatureData)
 }
 
-// Refuser un devis
-export const rejectQuote = (token) => {
-  return apiClient.post(`/api/quotes/quotes/reject/${token}/`)
+// Refuser un devis (requiert l'ID du devis)
+export const rejectQuote = (quoteId, payload = {}) => {
+  return apiClient.post(`/api/quotes/quotes/${quoteId}/reject/`, payload)
 }
 
 // Dupliquer un devis
