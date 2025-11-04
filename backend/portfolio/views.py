@@ -1,4 +1,4 @@
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -7,10 +7,10 @@ from django.db.models import Avg, Count
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from django.core.cache import cache
-from .models import Technology, Project, Testimonial
+from .models import Technology, Project, Testimonial, ContactMessage
 from .serializers import (
     TechnologySerializer, ProjectListSerializer, ProjectDetailSerializer,
-    TestimonialSerializer
+    TestimonialSerializer, ContactMessageSerializer
 )
 
 
@@ -101,3 +101,33 @@ def statistics(request):
         'satisfaction_rate': satisfaction_rate,
         'years_experience': years_experience,
     })
+
+
+class ContactMessageViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint pour les messages de contact
+
+    - POST: Créer un nouveau message (public, pas d'authentification requise)
+    - GET/LIST: Lister les messages (admin uniquement)
+    - PATCH: Mettre à jour le statut d'un message (admin uniquement)
+    """
+    queryset = ContactMessage.objects.all().order_by('-created_at')
+    serializer_class = ContactMessageSerializer
+
+    def get_permissions(self):
+        """Permettre la création sans authentification, le reste nécessite admin"""
+        if self.action == 'create':
+            return [AllowAny()]
+        from rest_framework.permissions import IsAdminUser
+        return [IsAdminUser()]
+
+    def create(self, request, *args, **kwargs):
+        """Créer un nouveau message de contact"""
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        return Response({
+            'message': 'Votre message a été envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.',
+            'data': serializer.data
+        }, status=status.HTTP_201_CREATED)

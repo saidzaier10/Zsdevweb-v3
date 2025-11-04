@@ -163,4 +163,57 @@ class Testimonial(models.Model):
     def __str__(self):
         return f"{self.client_name} - {self.rating}★"
 
-# Create your models here.
+
+class ContactMessage(models.Model):
+    """Messages de contact envoyés depuis le formulaire"""
+
+    STATUS_CHOICES = [
+        ('new', 'Nouveau'),
+        ('read', 'Lu'),
+        ('replied', 'Répondu'),
+        ('archived', 'Archivé'),
+    ]
+
+    # Informations du contact
+    name = models.CharField(max_length=200, verbose_name="Nom")
+    email = models.EmailField(verbose_name="Email")
+    phone = models.CharField(max_length=20, blank=True, verbose_name="Téléphone")
+    subject = models.CharField(max_length=300, verbose_name="Sujet")
+    message = models.TextField(verbose_name="Message")
+
+    # Métadonnées
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name="Adresse IP")
+    user_agent = models.TextField(blank=True, verbose_name="User Agent")
+
+    # Dates
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Reçu le")
+    read_at = models.DateTimeField(null=True, blank=True, verbose_name="Lu le")
+    replied_at = models.DateTimeField(null=True, blank=True, verbose_name="Répondu le")
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Message de contact"
+        verbose_name_plural = "Messages de contact"
+        indexes = [
+            models.Index(fields=['status', '-created_at']),
+            models.Index(fields=['email']),
+        ]
+
+    def __str__(self):
+        return f"{self.name} - {self.subject} ({self.get_status_display()})"
+
+    def mark_as_read(self):
+        """Marquer le message comme lu"""
+        from django.utils import timezone
+        if self.status == 'new':
+            self.status = 'read'
+            self.read_at = timezone.now()
+            self.save(update_fields=['status', 'read_at'])
+
+    def mark_as_replied(self):
+        """Marquer le message comme répondu"""
+        from django.utils import timezone
+        self.status = 'replied'
+        self.replied_at = timezone.now()
+        self.save(update_fields=['status', 'replied_at'])

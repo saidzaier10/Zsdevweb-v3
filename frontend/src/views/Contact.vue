@@ -201,6 +201,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { sendContactMessage } from '../api/contact'
 
 const form = ref({
   name: '',
@@ -218,13 +219,13 @@ const handleSubmit = async () => {
   submitting.value = true
   successMessage.value = ''
   errorMessage.value = ''
-  
+
   try {
-    // Simuler l'envoi (remplacez par votre vraie API)
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    successMessage.value = 'Message envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.'
-    
+    const response = await sendContactMessage(form.value)
+
+    // Afficher le message de succès du backend
+    successMessage.value = response.data.message || 'Message envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.'
+
     // Reset form
     form.value = {
       name: '',
@@ -234,8 +235,21 @@ const handleSubmit = async () => {
       message: ''
     }
   } catch (error) {
-    errorMessage.value = "Erreur lors de l'envoi du message. Veuillez réessayer."
-    console.error('Erreur:', error)
+    console.error('Erreur lors de l\'envoi du message:', error)
+
+    // Gérer les erreurs de validation
+    if (error.response?.data) {
+      const errors = error.response.data
+      if (typeof errors === 'object' && !errors.message) {
+        // Afficher les erreurs de validation
+        const errorMessages = Object.values(errors).flat().join(' ')
+        errorMessage.value = errorMessages || "Erreur lors de l'envoi du message. Veuillez réessayer."
+      } else {
+        errorMessage.value = errors.message || errors.detail || "Erreur lors de l'envoi du message. Veuillez réessayer."
+      }
+    } else {
+      errorMessage.value = "Erreur lors de l'envoi du message. Veuillez réessayer."
+    }
   } finally {
     submitting.value = false
   }

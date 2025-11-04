@@ -1,0 +1,35 @@
+{% extends 'emails/base_email.html' %}
+
+{% block title %}Nouveau message de contact - ZsDevWeb{% endblock %}
+
+{% block content %}
+<h2>📬 Nouveau message de contact</h2>
+
+<div class="info-box">
+    <strong>👤 De :</strong> {{ message.name }}<br>
+    <strong>📧 Email :</strong> <a href="mailto:{{ message.email }}">{{ message.email }}</a><br>
+    {% if message.phone %}
+    <strong>📞 Téléphone :</strong> {{ message.phone }}<br>
+    {% endif %}
+    <strong>📅 Reçu le :</strong> {{ message.created_at|date:"d/m/Y à H:i" }}<br>
+    <strong>🔍 Sujet :</strong> {{ message.subject }}
+</div>
+
+<p><strong>Message :</strong></p>
+<div class="info-box" style="border-left-color: #10b981; background-color: #f0fdf4;">
+    {{ message.message|linebreaksbr }}
+</div>
+
+<center style="margin-top: 30px;">
+    <a href="mailto:{{ message.email }}?subject=Re: {{ message.subject|urlencode }}" class="cta-button">
+        📧 Répondre à {{ message.name }}
+    </a>
+</center>
+
+<div class="warning-box" style="margin-top: 20px;">
+    ℹ️ <strong>Information :</strong> Ce message a été envoyé depuis votre formulaire de contact sur ZsDevWeb.
+    {% if message.ip_address %}
+    <br>Adresse IP : {{ message.ip_address }}
+    {% endif %}
+</div>
+{% endblock %}

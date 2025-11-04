@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Technology, Project, ProjectImage, Testimonial
+from .models import Technology, Project, ProjectImage, Testimonial, ContactMessage
 
 
 class TechnologySerializer(serializers.ModelSerializer):
@@ -69,3 +69,54 @@ class TestimonialSerializer(serializers.ModelSerializer):
             'is_published', 'order', 'created_at'
         ]
         read_only_fields = ['created_at']
+
+
+class ContactMessageSerializer(serializers.ModelSerializer):
+    """Serializer pour les messages de contact"""
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = ContactMessage
+        fields = [
+            'id', 'name', 'email', 'phone', 'subject', 'message',
+            'status', 'status_display', 'created_at', 'read_at', 'replied_at'
+        ]
+        read_only_fields = ['id', 'status', 'created_at', 'read_at', 'replied_at']
+
+    def validate_email(self, value):
+        """Valider le format de l'email"""
+        import re
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_regex, value):
+            raise serializers.ValidationError("Format d'email invalide")
+        return value.lower()
+
+    def create(self, validated_data):
+        """Créer un message et envoyer une notification par email"""
+        # Récupérer les métadonnées de la requête
+        request = self.context.get('request')
+        if request:
+            validated_data['ip_address'] = self.get_client_ip(request)
+            validated_data['user_agent'] = request.META.get('HTTP_USER_AGENT', '')[:500]
+
+        # Créer le message
+        message = ContactMessage.objects.create(**validated_data)
+
+        # Envoyer une notification par email (async pour ne pas bloquer)
+        try:
+            from .emails import send_contact_notification_email
+            send_contact_notification_email(message)
+        except Exception as e:
+            # Logger l'erreur mais ne pas bloquer la création
+            print(f"⚠️ Erreur lors de l'envoi de la notification: {e}")
+
+        return message
+
+    def get_client_ip(self, request):
+        """Récupérer l'IP du client"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
