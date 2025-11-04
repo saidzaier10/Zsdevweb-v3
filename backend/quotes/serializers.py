@@ -5,6 +5,7 @@ from rest_framework import serializers
 from django.utils import timezone
 from .models import (
     Company,
+    ProjectCategory,
     ProjectType,
     DesignOption,
     ComplexityLevel,
@@ -17,7 +18,7 @@ from .models import (
 
 class CompanySerializer(serializers.ModelSerializer):
     """Serializer pour les informations de l'entreprise"""
-    
+
     class Meta:
         model = Company
         fields = [
@@ -28,9 +29,36 @@ class CompanySerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 
+class ProjectCategorySerializer(serializers.ModelSerializer):
+    """Serializer pour les catégories de projets"""
+
+    project_types_count = serializers.SerializerMethodField()
+    compatible_options_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProjectCategory
+        fields = [
+            'id', 'name', 'slug', 'description', 'icon', 'color', 'order',
+            'is_active', 'project_types_count', 'compatible_options_count',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_project_types_count(self, obj):
+        """Compte le nombre de types de projets dans cette catégorie"""
+        return obj.project_types.filter(is_active=True).count()
+
+    def get_compatible_options_count(self, obj):
+        """Compte les options spécifiques à cette catégorie"""
+        return obj.compatible_options.filter(is_active=True).count()
+
+
 class ProjectTypeSerializer(serializers.ModelSerializer):
     """Serializer pour les types de projets"""
-    
+
+    category_detail = ProjectCategorySerializer(source='category', read_only=True)
+    category_name = serializers.CharField(source='category.name', read_only=True, allow_null=True)
+
     class Meta:
         model = ProjectType
         fields = '__all__'
@@ -54,12 +82,22 @@ class ComplexityLevelSerializer(serializers.ModelSerializer):
 
 class SupplementaryOptionSerializer(serializers.ModelSerializer):
     """Serializer pour les options supplémentaires"""
-    
+
     billing_type_display = serializers.CharField(source='get_billing_type_display', read_only=True)
-    
+    compatible_categories_detail = ProjectCategorySerializer(
+        source='compatible_categories',
+        many=True,
+        read_only=True
+    )
+    is_universal = serializers.SerializerMethodField()
+
     class Meta:
         model = SupplementaryOption
         fields = '__all__'
+
+    def get_is_universal(self, obj):
+        """Indique si l'option est disponible pour toutes les catégories"""
+        return not obj.compatible_categories.exists()
 
 
 class QuoteTemplateSerializer(serializers.ModelSerializer):
@@ -107,14 +145,16 @@ class QuoteListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quote
         fields = [
-            'id', 'quote_number', 'client_name', 'client_email',
+            'id', 'quote_number', 'client_name', 'client_email', 'client_phone',
             'company_name', 'project_type', 'project_type_name',
             'design_option', 'complexity_level', 'supplementary_options',
+            'project_description',  # Description du projet (nécessaire pour l'édition)
             'status', 'status_display', 'total_ttc', 'total_price',
             'is_expired', 'created_at', 'expires_at', 'signature_token',
             'pdf_file',  # Ajout du fichier PDF pour téléchargement
             'created_by_username', 'created_by_email', 'created_by_id',  # Info utilisateur
-            'discount_type', 'discount_value', 'discount_reason', 'discount_amount'  # Remises
+            'discount_type', 'discount_value', 'discount_reason', 'discount_amount',  # Remises
+            'sent_at', 'viewed_at', 'signed_at', 'signer_name'  # Timeline
         ]
 
 
@@ -169,7 +209,7 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
             
             # Signature
             'signature_token', 'signature_url', 'signature_image',
-            'signed_at', 'client_ip',
+            'signed_at', 'signer_name', 'client_ip',
             
             # Statut
             'status', 'status_display', 'expires_at', 'is_expired',

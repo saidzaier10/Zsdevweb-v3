@@ -49,8 +49,37 @@ class Company(models.Model):
         return instance
 
 
+class ProjectCategory(models.Model):
+    """Catégories principales de projets (Site Vitrine, E-commerce, Application Web)"""
+    name = models.CharField(max_length=100, unique=True, verbose_name="Nom de la catégorie")
+    slug = models.SlugField(max_length=100, unique=True, help_text="Identifiant URL-friendly")
+    description = models.TextField(help_text="Description de la catégorie")
+    icon = models.CharField(max_length=50, blank=True, help_text="Classe CSS d'icône (ex: fas fa-globe)")
+    color = models.CharField(max_length=7, default="#2563eb", help_text="Couleur hexadécimale")
+    order = models.IntegerField(default=0, help_text="Ordre d'affichage")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'name']
+        verbose_name = "Catégorie de projet"
+        verbose_name_plural = "Catégories de projets"
+
+    def __str__(self):
+        return self.name
+
+
 class ProjectType(models.Model):
     """Types de projets (Site vitrine, E-commerce, etc.)"""
+    category = models.ForeignKey(
+        ProjectCategory,
+        on_delete=models.CASCADE,
+        related_name='project_types',
+        verbose_name="Catégorie",
+        null=True,  # Temporaire pour la migration
+        blank=True
+    )
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField()
     base_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
@@ -111,11 +140,21 @@ class SupplementaryOption(models.Model):
         ('monthly', 'Mensuel'),
         ('yearly', 'Annuel'),
     ]
-    
+
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     billing_type = models.CharField(max_length=20, choices=BILLING_TYPE_CHOICES, default='one_time')
+
+    # Filtrage intelligent par catégorie
+    compatible_categories = models.ManyToManyField(
+        ProjectCategory,
+        related_name='compatible_options',
+        blank=True,
+        verbose_name="Catégories compatibles",
+        help_text="Si vide, l'option est disponible pour toutes les catégories"
+    )
+
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -127,6 +166,12 @@ class SupplementaryOption(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.get_billing_type_display()})"
+
+    def is_compatible_with_category(self, category):
+        """Vérifie si l'option est compatible avec une catégorie donnée"""
+        if not self.compatible_categories.exists():
+            return True  # Si aucune catégorie spécifiée, compatible avec toutes
+        return self.compatible_categories.filter(id=category.id).exists()
 
 
 class QuoteTemplate(models.Model):

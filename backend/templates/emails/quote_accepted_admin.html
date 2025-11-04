@@ -1,0 +1,53 @@
+{% extends 'emails/base_email.html' %}
+
+{% block title %}🎉 Nouveau devis signé - {{ quote.quote_number }}{% endblock %}
+
+{% block content %}
+<h2>🎉 Excellente nouvelle !</h2>
+
+<p>Le devis <strong>{{ quote.quote_number }}</strong> vient d'être signé par le client.</p>
+
+<div class="info-box" style="border-left-color: #10b981;">
+    <strong>📄 Devis :</strong> {{ quote.quote_number }}<br>
+    <strong>👤 Client :</strong> {{ quote.client_name }} ({{ quote.client_email }})<br>
+    {% if quote.company_name %}<strong>🏢 Entreprise :</strong> {{ quote.company_name }}<br>{% endif %}
+    <strong>💰 Montant :</strong> {{ quote.total_ttc }} € TTC<br>
+    <strong>🎨 Projet :</strong> {{ quote.project_type.name }}<br>
+    <strong>✅ Signé le :</strong> {{ quote.signed_at|date:"d/m/Y à H:i" }}<br>
+    <strong>✍️ Signé par :</strong> {{ quote.signer_name }}
+</div>
+
+<p><strong>📋 Description du projet :</strong></p>
+<div class="info-box">
+    {{ quote.project_description|default:"Aucune description fournie" }}
+</div>
+
+<p><strong>💵 Détails financiers :</strong></p>
+<ul style="line-height: 1.8;">
+    <li>Sous-total HT : {{ quote.subtotal_ht }} €</li>
+    {% if quote.discount_amount > 0 %}
+    <li style="color: #10b981;">Remise : -{{ quote.discount_amount }} € {% if quote.discount_reason %}({{ quote.discount_reason }}){% endif %}</li>
+    {% endif %}
+    <li>TVA ({{ quote.tva_rate }}%) : {{ quote.tva_amount }} €</li>
+    <li><strong>Total TTC : {{ quote.total_ttc }} €</strong></li>
+</ul>
+
+<p><strong>📌 Prochaines actions :</strong></p>
+<ol style="line-height: 2;">
+    <li>Envoyer la facture d'acompte (30%) : {{ quote.payment_first }} €</li>
+    <li>Attendre réception du paiement</li>
+    <li>Démarrer le projet</li>
+    <li>Tenir le client informé de l'avancement</li>
+</ol>
+
+<center>
+    <a href="{{ frontend_url }}/admin/devis" class="cta-button">
+        📊 Voir dans le dashboard
+    </a>
+</center>
+
+<p>N'oubliez pas de contacter le client pour les prochaines étapes !</p>
+
+<p>Bonne journée,<br>
+<strong>Système de gestion ZsDevWeb</strong></p>
+{% endblock %}

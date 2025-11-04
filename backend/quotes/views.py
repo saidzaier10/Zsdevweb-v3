@@ -19,6 +19,7 @@ from django.core.files.base import ContentFile
 
 from .models import (
     Company,
+    ProjectCategory,
     ProjectType,
     DesignOption,
     ComplexityLevel,
@@ -29,6 +30,7 @@ from .models import (
 )
 from .serializers import (
     CompanySerializer,
+    ProjectCategorySerializer,
     ProjectTypeSerializer,
     DesignOptionSerializer,
     ComplexityLevelSerializer,
@@ -62,11 +64,30 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
 
 @method_decorator(cache_page(60 * 30), name='dispatch')  # Cache 30 minutes
+class ProjectCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    """API pour récupérer les catégories de projets - Cached 30min"""
+    queryset = ProjectCategory.objects.filter(is_active=True)
+    serializer_class = ProjectCategorySerializer
+    permission_classes = [permissions.AllowAny]
+    lookup_field = 'slug'  # Permet de récupérer par slug au lieu de id
+
+
+@method_decorator(cache_page(60 * 30), name='dispatch')  # Cache 30 minutes
 class ProjectTypeViewSet(viewsets.ReadOnlyModelViewSet):
     """API pour récupérer les types de projets - Cached 30min"""
     queryset = ProjectType.objects.filter(is_active=True)
     serializer_class = ProjectTypeSerializer
     permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        """Filtrer par catégorie si spécifié"""
+        queryset = super().get_queryset()
+        category_slug = self.request.query_params.get('category', None)
+
+        if category_slug:
+            queryset = queryset.filter(category__slug=category_slug)
+
+        return queryset.select_related('category')
 
 
 @method_decorator(cache_page(60 * 30), name='dispatch')  # Cache 30 minutes
@@ -91,14 +112,41 @@ class SupplementaryOptionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = SupplementaryOption.objects.filter(is_active=True)
     serializer_class = SupplementaryOptionSerializer
     permission_classes = [permissions.AllowAny]
-    
+
     def get_queryset(self):
-        """Filtrer par type de facturation"""
+        """Filtrer par type de facturation et/ou catégorie"""
         queryset = super().get_queryset()
+
+        # Filtrage par type de facturation
         billing_type = self.request.query_params.get('billing_type', None)
         if billing_type:
             queryset = queryset.filter(billing_type=billing_type)
-        return queryset
+
+        # Filtrage intelligent par catégorie
+        category_slug = self.request.query_params.get('category', None)
+        if category_slug:
+            try:
+                category = ProjectCategory.objects.get(slug=category_slug)
+
+                # Récupère les options spécifiques à cette catégorie OU les options universelles
+                from django.db.models import Q
+                # Get IDs of options that have no categories (universal options)
+                universal_option_ids = SupplementaryOption.objects.filter(
+                    is_active=True
+                ).exclude(
+                    compatible_categories__isnull=False
+                ).values_list('id', flat=True)
+
+                # Filter for category-specific OR universal options
+                queryset = queryset.filter(
+                    Q(compatible_categories=category) |  # Options spécifiques
+                    Q(id__in=universal_option_ids)  # Options universelles
+                ).distinct()
+
+            except ProjectCategory.DoesNotExist:
+                pass
+
+        return queryset.prefetch_related('compatible_categories')
 
 
 class QuoteTemplateViewSet(viewsets.ReadOnlyModelViewSet):

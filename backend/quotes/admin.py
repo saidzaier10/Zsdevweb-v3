@@ -5,11 +5,12 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from django.utils import timezone
 from .models import (
-    Company, 
-    ProjectType, 
-    DesignOption, 
-    ComplexityLevel, 
-    SupplementaryOption, 
+    Company,
+    ProjectCategory,
+    ProjectType,
+    DesignOption,
+    ComplexityLevel,
+    SupplementaryOption,
     QuoteTemplate,
     Quote,
     QuoteEmailLog
@@ -50,10 +51,40 @@ class CompanyAdmin(admin.ModelAdmin):
         return False
 
 
+@admin.register(ProjectCategory)
+class ProjectCategoryAdmin(admin.ModelAdmin):
+    """Administration des catégories de projets"""
+    list_display = ['name', 'slug', 'display_color', 'order', 'is_active', 'created_at']
+    list_filter = ['is_active']
+    search_fields = ['name', 'description']
+    list_editable = ['order', 'is_active']
+    prepopulated_fields = {'slug': ('name',)}
+
+    fieldsets = (
+        ('📋 Informations', {
+            'fields': ('name', 'slug', 'description')
+        }),
+        ('🎨 Présentation', {
+            'fields': ('icon', 'color', 'order')
+        }),
+        ('⚙️ Paramètres', {
+            'fields': ('is_active',)
+        }),
+    )
+
+    def display_color(self, obj):
+        """Affiche un aperçu de la couleur"""
+        return format_html(
+            '<span style="background-color: {}; padding: 5px 15px; color: white; border-radius: 4px;">●</span>',
+            obj.color
+        )
+    display_color.short_description = 'Couleur'
+
+
 @admin.register(ProjectType)
 class ProjectTypeAdmin(admin.ModelAdmin):
-    list_display = ['name', 'base_price', 'estimated_days', 'is_active', 'created_at']
-    list_filter = ['is_active']
+    list_display = ['name', 'category', 'base_price', 'estimated_days', 'is_active', 'created_at']
+    list_filter = ['is_active', 'category']
     search_fields = ['name', 'description']
     list_editable = ['is_active']
 
@@ -76,10 +107,38 @@ class ComplexityLevelAdmin(admin.ModelAdmin):
 
 @admin.register(SupplementaryOption)
 class SupplementaryOptionAdmin(admin.ModelAdmin):
-    list_display = ['name', 'price', 'billing_type', 'is_active', 'created_at']
-    list_filter = ['is_active', 'billing_type']
+    list_display = ['name', 'price', 'billing_type', 'display_categories', 'is_active', 'created_at']
+    list_filter = ['is_active', 'billing_type', 'compatible_categories']
     search_fields = ['name', 'description']
     list_editable = ['is_active']
+    filter_horizontal = ['compatible_categories']
+
+    fieldsets = (
+        ('📋 Informations', {
+            'fields': ('name', 'description')
+        }),
+        ('💰 Tarification', {
+            'fields': ('price', 'billing_type')
+        }),
+        ('🔧 Compatibilité', {
+            'fields': ('compatible_categories',),
+            'description': 'Laissez vide pour rendre l\'option disponible pour toutes les catégories'
+        }),
+        ('⚙️ Paramètres', {
+            'fields': ('is_active',)
+        }),
+    )
+
+    def display_categories(self, obj):
+        """Affiche les catégories compatibles"""
+        categories = obj.compatible_categories.all()
+        if not categories.exists():
+            return format_html('<span style="color: #10b981;">✓ Toutes catégories</span>')
+        return format_html(
+            '<span>{}</span>',
+            ', '.join([cat.name for cat in categories])
+        )
+    display_categories.short_description = 'Catégories'
 
 
 @admin.register(QuoteTemplate)

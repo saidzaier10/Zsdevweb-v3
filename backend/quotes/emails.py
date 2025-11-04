@@ -60,7 +60,7 @@ def send_quote_email(quote, email_type='created', context=None):
     
     # Rendre le template HTML
     html_content = render_to_string(config['template'], email_context)
-    
+
     # Créer l'email
     email = EmailMultiAlternatives(
         subject=config['subject'],
@@ -113,8 +113,43 @@ def send_quote_created_email(quote):
 
 
 def send_quote_accepted_email(quote):
-    """Envoie l'email de confirmation de signature"""
-    return send_quote_email(quote, 'accepted')
+    """Envoie l'email de confirmation de signature au client ET à l'admin"""
+    # Email au client
+    send_quote_email(quote, 'accepted')
+
+    # Email spécifique à l'admin
+    admin_email_context = {
+        'quote': quote,
+        'frontend_url': settings.FRONTEND_URL,
+        'current_year': timezone.now().year,
+    }
+
+    html_content = render_to_string('emails/quote_accepted_admin.html', admin_email_context)
+
+    admin_email = EmailMultiAlternatives(
+        subject=f'🎉 Nouveau devis signé - {quote.quote_number}',
+        body=f"Le devis {quote.quote_number} a été signé par {quote.signer_name}.",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[settings.DEFAULT_FROM_EMAIL],
+    )
+    admin_email.attach_alternative(html_content, "text/html")
+
+    try:
+        admin_email.send()
+
+        # Logger l'envoi
+        from .models import QuoteEmailLog
+        QuoteEmailLog.objects.create(
+            quote=quote,
+            email_type='accepted_admin',
+            recipient=settings.DEFAULT_FROM_EMAIL,
+            subject=f'Nouveau devis signé - {quote.quote_number}',
+            success=True
+        )
+    except Exception as e:
+        print(f"⚠️ Erreur envoi email admin: {e}")
+
+    return True
 
 
 def send_quote_rejected_email(quote):
