@@ -118,6 +118,35 @@ DATABASES = {
 
 
 # ==============================================================================
+# REDIS & CACHING
+# ==============================================================================
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.getenv('REDIS_URL', 'redis://redis:6379/1'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'SOCKET_CONNECT_TIMEOUT': 5,
+            'SOCKET_TIMEOUT': 5,
+            'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+            'CONNECTION_POOL_KWARGS': {
+                'max_connections': 50,
+                'retry_on_timeout': True,
+            },
+            'IGNORE_EXCEPTIONS': True,  # Don't crash if Redis is down
+        },
+        'KEY_PREFIX': 'zsdevweb',
+        'TIMEOUT': 300,  # 5 minutes default
+    }
+}
+
+# # Cache pour les sessions (optionnel - améliore les performances)
+# # SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+# # SESSION_CACHE_ALIAS = 'default'
+
+
+# ==============================================================================
 # PASSWORD VALIDATION
 # ==============================================================================
 

@@ -8,6 +8,8 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Count, Sum, Avg, Q
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
 from datetime import timedelta
 
 from .models import (
@@ -54,29 +56,33 @@ class CompanyViewSet(viewsets.ModelViewSet):
         return [permissions.AllowAny()]
 
 
+@method_decorator(cache_page(60 * 30), name='dispatch')  # Cache 30 minutes
 class ProjectTypeViewSet(viewsets.ReadOnlyModelViewSet):
-    """API pour récupérer les types de projets"""
+    """API pour récupérer les types de projets - Cached 30min"""
     queryset = ProjectType.objects.filter(is_active=True)
     serializer_class = ProjectTypeSerializer
     permission_classes = [permissions.AllowAny]
 
 
+@method_decorator(cache_page(60 * 30), name='dispatch')  # Cache 30 minutes
 class DesignOptionViewSet(viewsets.ReadOnlyModelViewSet):
-    """API pour récupérer les options de design"""
+    """API pour récupérer les options de design - Cached 30min"""
     queryset = DesignOption.objects.filter(is_active=True)
     serializer_class = DesignOptionSerializer
     permission_classes = [permissions.AllowAny]
 
 
+@method_decorator(cache_page(60 * 30), name='dispatch')  # Cache 30 minutes
 class ComplexityLevelViewSet(viewsets.ReadOnlyModelViewSet):
-    """API pour récupérer les niveaux de complexité"""
+    """API pour récupérer les niveaux de complexité - Cached 30min"""
     queryset = ComplexityLevel.objects.filter(is_active=True)
     serializer_class = ComplexityLevelSerializer
     permission_classes = [permissions.AllowAny]
 
 
+@method_decorator(cache_page(60 * 30), name='dispatch')  # Cache 30 minutes
 class SupplementaryOptionViewSet(viewsets.ReadOnlyModelViewSet):
-    """API pour récupérer les options supplémentaires"""
+    """API pour récupérer les options supplémentaires - Cached 30min"""
     queryset = SupplementaryOption.objects.filter(is_active=True)
     serializer_class = SupplementaryOptionSerializer
     permission_classes = [permissions.AllowAny]
@@ -132,18 +138,30 @@ class QuoteViewSet(viewsets.ModelViewSet):
             return [permissions.AllowAny()]
         elif self.action in ['list', 'update', 'partial_update', 'destroy']:
             return [permissions.IsAdminUser()]
+        elif self.action == 'retrieve':
+            # Utilisateurs authentifiés peuvent voir leurs propres devis
+            return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
     
     def get_queryset(self):
-        """Admins voient tout, autres ne voient rien (ils utilisent my_quotes)"""
+        """
+        Admins voient tout, utilisateurs authentifiés voient leurs propres devis
+        Les utilisateurs non-authentifiés ne voient rien (sauf via actions publiques)
+        """
         queryset = super().get_queryset()
-        
+
+        # Admins voient tous les devis
         if self.request.user and self.request.user.is_staff:
             status_filter = self.request.query_params.get('status', None)
             if status_filter:
                 queryset = queryset.filter(status=status_filter)
             return queryset
-        
+
+        # Utilisateurs authentifiés voient leurs propres devis
+        if self.request.user and self.request.user.is_authenticated:
+            return queryset.filter(created_by=self.request.user)
+
+        # Utilisateurs non-authentifiés ne voient rien (utiliser les actions publiques)
         return queryset.none()
     
     def create(self, request, *args, **kwargs):

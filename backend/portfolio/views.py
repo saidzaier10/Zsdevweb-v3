@@ -4,6 +4,9 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Avg, Count
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
+from django.core.cache import cache
 from .models import Technology, Project, Testimonial
 from .serializers import (
     TechnologySerializer, ProjectListSerializer, ProjectDetailSerializer,
@@ -11,8 +14,9 @@ from .serializers import (
 )
 
 
+@method_decorator(cache_page(60 * 15), name='dispatch')  # Cache 15 minutes
 class TechnologyViewSet(viewsets.ReadOnlyModelViewSet):
-    """API endpoint pour les technologies"""
+    """API endpoint pour les technologies - Cached for 15 minutes"""
     queryset = Technology.objects.filter(is_active=True)
     serializer_class = TechnologySerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -22,23 +26,25 @@ class TechnologyViewSet(viewsets.ReadOnlyModelViewSet):
     ordering = ['category', 'name']
 
 
+@method_decorator(cache_page(60 * 10), name='dispatch')  # Cache 10 minutes
 class ProjectViewSet(viewsets.ReadOnlyModelViewSet):
-    """API endpoint pour les projets - optimisé avec prefetch_related"""
+    """API endpoint pour les projets - optimisé avec prefetch_related et cache"""
     queryset = Project.objects.filter(is_published=True).prefetch_related('technologies')
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['featured']
     search_fields = ['title', 'description']
     ordering_fields = ['order', 'completion_date', 'created_at']
     ordering = ['order', '-completion_date']
-    
+
     def get_serializer_class(self):
         if self.action == 'list':
             return ProjectListSerializer
         return ProjectDetailSerializer
 
 
+@method_decorator(cache_page(60 * 10), name='dispatch')  # Cache 10 minutes
 class TestimonialViewSet(viewsets.ReadOnlyModelViewSet):
-    """API endpoint pour les témoignages"""
+    """API endpoint pour les témoignages - Cached for 10 minutes"""
     queryset = Testimonial.objects.filter(is_published=True)
     serializer_class = TestimonialSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
@@ -49,6 +55,7 @@ class TestimonialViewSet(viewsets.ReadOnlyModelViewSet):
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@cache_page(60 * 5)  # Cache statistics for 5 minutes
 def statistics(request):
     """
     Endpoint pour récupérer les statistiques du portfolio
