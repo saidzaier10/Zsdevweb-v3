@@ -41,8 +41,8 @@
               Devis
             </router-link>
           </li>
-          <!-- Mes Devis (uniquement si connecté) -->
-          <li v-if="authStore.isAuthenticated">
+          <!-- Mes Devis (uniquement si connecté et non admin) -->
+          <li v-if="authStore.isAuthenticated && !authStore.user?.is_staff">
             <router-link
               to="/mes-devis"
               class="px-4 py-2 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all duration-200"
@@ -173,9 +173,9 @@
           >
             Devis
           </router-link>
-          <!-- Mes Devis (mobile - uniquement si connecté) -->
+          <!-- Mes Devis (mobile - uniquement si connecté et non admin) -->
           <router-link
-            v-if="authStore.isAuthenticated"
+            v-if="authStore.isAuthenticated && !authStore.user?.is_staff"
             to="/mes-devis"
             @click="mobileMenuOpen = false"
             class="block px-4 py-3 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all"

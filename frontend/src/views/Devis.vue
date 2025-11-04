@@ -15,13 +15,13 @@
       <div class="container mx-auto px-4">
         <div class="max-w-4xl mx-auto">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-semibold text-dark-700 dark:text-dark-200">Étape {{ currentStep }} sur 7</span>
-            <span class="text-sm font-semibold text-primary-600 dark:text-primary-400">{{ Math.round((currentStep / 7) * 100) }}%</span>
+            <span class="text-sm font-semibold text-dark-700 dark:text-dark-200">Étape {{ currentStep }} sur 8</span>
+            <span class="text-sm font-semibold text-primary-600 dark:text-primary-400">{{ Math.round((currentStep / 8) * 100) }}%</span>
           </div>
           <div class="w-full bg-gray-200 dark:bg-dark-700 rounded-full h-3 overflow-hidden">
-            <div 
+            <div
               class="bg-gradient-to-r from-primary-600 to-secondary-500 h-full rounded-full transition-all duration-500 ease-out"
-              :style="{ width: `${(currentStep / 7) * 100}%` }"
+              :style="{ width: `${(currentStep / 8) * 100}%` }"
             ></div>
           </div>
         </div>
@@ -37,8 +37,13 @@
         </div>
 
         <div v-else class="bg-white dark:bg-dark-800 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-dark-700">
-          <!-- Étape 1 : Informations client -->
-          <div v-if="currentStep === 1" class="space-y-6 animate-fade-in-auto">
+          <!-- Étape 1 : Sélection de la catégorie -->
+          <div v-if="currentStep === 1" class="animate-fade-in-auto">
+            <CategorySelector @category-selected="onCategorySelected" />
+          </div>
+
+          <!-- Étape 2 : Informations client -->
+          <div v-if="currentStep === 2" class="space-y-6 animate-fade-in-auto">
             <div class="text-center mb-6">
               <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full mb-4">
                 <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,8 +107,8 @@
             </div>
           </div>
 
-          <!-- Étape 2 : Type de projet -->
-          <div v-if="currentStep === 2" class="space-y-6 animate-fade-in-auto">
+          <!-- Étape 3 : Type de projet -->
+          <div v-if="currentStep === 3" class="space-y-6 animate-fade-in-auto">
             <div class="text-center mb-6">
               <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full mb-4">
                 <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,8 +144,8 @@
             </div>
           </div>
 
-          <!-- Étape 3 : Option de design -->
-          <div v-if="currentStep === 3" class="space-y-6 animate-fade-in-auto">
+          <!-- Étape 4 : Option de design -->
+          <div v-if="currentStep === 4" class="space-y-6 animate-fade-in-auto">
             <div class="text-center mb-6">
               <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full mb-4">
                 <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -176,8 +181,8 @@
             </div>
           </div>
 
-          <!-- Étape 4 : Niveau de complexité -->
-          <div v-if="currentStep === 4" class="space-y-6 animate-fade-in-auto">
+          <!-- Étape 5 : Niveau de complexité -->
+          <div v-if="currentStep === 5" class="space-y-6 animate-fade-in-auto">
             <div class="text-center mb-6">
               <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full mb-4">
                 <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -213,8 +218,8 @@
             </div>
           </div>
 
-          <!-- Étape 5 : Options supplémentaires -->
-          <div v-if="currentStep === 5" class="space-y-6 animate-fade-in-auto">
+          <!-- Étape 6 : Options supplémentaires -->
+          <div v-if="currentStep === 6" class="space-y-6 animate-fade-in-auto">
             <div class="text-center mb-6">
               <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full mb-4">
                 <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -266,8 +271,8 @@
             </div>
           </div>
 
-          <!-- Étape 6 : Description et deadline -->
-          <div v-if="currentStep === 6" class="space-y-6 animate-fade-in-auto">
+          <!-- Étape 7 : Description et deadline -->
+          <div v-if="currentStep === 7" class="space-y-6 animate-fade-in-auto">
             <div class="text-center mb-6">
               <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full mb-4">
                 <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -307,8 +312,8 @@
             </div>
           </div>
 
-          <!-- Étape 7 : Récapitulatif -->
-          <div v-if="currentStep === 7" class="space-y-6 animate-fade-in-auto">
+          <!-- Étape 8 : Récapitulatif -->
+          <div v-if="currentStep === 8" class="space-y-6 animate-fade-in-auto">
             <div class="text-center mb-6">
               <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full mb-4">
                 <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -410,7 +415,7 @@
             </button>
             
             <button
-              v-if="currentStep < 7"
+              v-if="currentStep < 8"
               @click="nextStep"
               :disabled="!canProceed"
               class="flex-1 bg-gradient-to-r from-primary-600 to-secondary-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-primary-700 hover:to-secondary-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
@@ -419,7 +424,7 @@
             </button>
 
             <button
-              v-if="currentStep === 7"
+              v-if="currentStep === 8"
               @click="submitQuote"
               :disabled="submitting"
               class="flex-1 bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-green-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
@@ -429,8 +434,8 @@
           </div>
         </div>
 
-        <!-- Floating Price Display (visible on steps 2-6) -->
-        <div v-if="currentStep >= 2 && currentStep <= 6" class="mt-8 bg-gradient-to-r from-primary-600 to-secondary-600 dark:from-primary-900 dark:to-secondary-900 text-white rounded-xl p-6 text-center shadow-xl">
+        <!-- Floating Price Display (visible on steps 3-7) -->
+        <div v-if="currentStep >= 3 && currentStep <= 7" class="mt-8 bg-gradient-to-r from-primary-600 to-secondary-600 dark:from-primary-900 dark:to-secondary-900 text-white rounded-xl p-6 text-center shadow-xl">
           <p class="text-sm font-medium mb-2 opacity-90">Estimation actuelle</p>
           <p class="text-4xl font-bold">{{ calculateTotal() }} €</p>
           <p class="text-sm mt-2 opacity-75">Prix indicatif • Devis final personnalisé</p>
@@ -441,25 +446,28 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { 
-  getProjectTypes, 
-  getDesignOptions, 
-  getComplexityLevels, 
+import {
+  getProjectTypes,
+  getDesignOptions,
+  getComplexityLevels,
   getSupplementaryOptions,
-  createQuote 
+  createQuote
 } from '../api/quotes'
 import { useToastStore } from '../stores/toast'
+import CategorySelector from '../components/CategorySelector.vue'
 
 const router = useRouter()
 const toastStore = useToastStore()
 
 const currentStep = ref(1)
-const loadingOptions = ref(true)
+const loadingOptions = ref(false)
 const submitting = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
+
+const selectedCategory = ref(null)
 
 const quote = ref({
   client_name: '',
@@ -479,15 +487,24 @@ const designOptions = ref([])
 const complexityLevels = ref([])
 const supplementaryOptions = ref([])
 
-onMounted(async () => {
+// Handler for category selection
+const onCategorySelected = async (category) => {
+  selectedCategory.value = category
+  await loadCategoryOptions(category.slug)
+  currentStep.value = 2 // Move to next step
+}
+
+// Load options filtered by category
+const loadCategoryOptions = async (categorySlug) => {
   try {
+    loadingOptions.value = true
     const [types, designs, levels, options] = await Promise.all([
-      getProjectTypes(),
+      getProjectTypes(categorySlug),
       getDesignOptions(),
       getComplexityLevels(),
-      getSupplementaryOptions()
+      getSupplementaryOptions(categorySlug)
     ])
-    
+
     projectTypes.value = types.data.results || types.data
     designOptions.value = designs.data.results || designs.data
     complexityLevels.value = levels.data.results || levels.data
@@ -495,25 +512,27 @@ onMounted(async () => {
   } catch (error) {
     console.error('Erreur lors du chargement:', error)
     errorMessage.value = 'Erreur lors du chargement des options'
-    toastStore.addToast('Erreur lors du chargement des options', 'error')
+    toastStore.showToast('Erreur lors du chargement des options', 'error')
   } finally {
     loadingOptions.value = false
   }
-})
+}
 
 const canProceed = computed(() => {
   switch (currentStep.value) {
     case 1:
-      return quote.value.client_name && quote.value.client_email
+      return selectedCategory.value !== null
     case 2:
-      return quote.value.project_type !== null
+      return quote.value.client_name && quote.value.client_email
     case 3:
-      return quote.value.design_option !== null
+      return quote.value.project_type !== null
     case 4:
-      return quote.value.complexity_level !== null
+      return quote.value.design_option !== null
     case 5:
-      return true // Options supplémentaires optionnelles
+      return quote.value.complexity_level !== null
     case 6:
+      return true // Options supplémentaires optionnelles
+    case 7:
       return quote.value.project_description && quote.value.project_description.length >= 10
     default:
       return true
@@ -570,7 +589,7 @@ const calculateTotal = () => {
 }
 
 const nextStep = () => {
-  if (canProceed.value && currentStep.value < 7) {
+  if (canProceed.value && currentStep.value < 8) {
     currentStep.value++
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -592,15 +611,15 @@ const submitQuote = async () => {
     const response = await createQuote(quote.value)
     
     successMessage.value = `Votre devis ${response.data.quote_number} a été créé avec succès ! Un email de confirmation a été envoyé à ${quote.value.client_email}.`
-    toastStore.addToast('Devis créé et envoyé par email avec succès !', 'success')
-    
+    toastStore.showToast('Devis créé et envoyé par email avec succès !', 'success')
+
     // Rediriger vers la page de mes devis après 2 secondes
     setTimeout(() => {
       router.push('/mes-devis')
     }, 2000)
   } catch (error) {
     errorMessage.value = error.response?.data?.error || "Erreur lors de l'envoi du devis. Veuillez réessayer."
-    toastStore.addToast(errorMessage.value, 'error')
+    toastStore.showToast(errorMessage.value, 'error')
     console.error('Erreur:', error)
   } finally {
     submitting.value = false

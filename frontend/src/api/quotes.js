@@ -1,8 +1,18 @@
 import apiClient from './axios'
 
+// Catégories de projets
+export const getCategories = () => {
+  return apiClient.get('/api/quotes/categories/')
+}
+
+export const getCategoryBySlug = (slug) => {
+  return apiClient.get(`/api/quotes/categories/${slug}/`)
+}
+
 // Configuration des types de projets
-export const getProjectTypes = () => {
-  return apiClient.get('/api/quotes/project-types/')
+export const getProjectTypes = (categorySlug = null) => {
+  const params = categorySlug ? { category: categorySlug } : {}
+  return apiClient.get('/api/quotes/project-types/', { params })
 }
 
 export const getDesignOptions = () => {
@@ -13,8 +23,9 @@ export const getComplexityLevels = () => {
   return apiClient.get('/api/quotes/complexity-levels/')
 }
 
-export const getSupplementaryOptions = () => {
-  return apiClient.get('/api/quotes/supplementary-options/')
+export const getSupplementaryOptions = (categorySlug = null) => {
+  const params = categorySlug ? { category: categorySlug } : {}
+  return apiClient.get('/api/quotes/supplementary-options/', { params })
 }
 
 // Gestion des devis

@@ -50,9 +50,12 @@
         </div>
       </div>
 
+      <!-- Graphiques Analytics -->
+      <QuoteCharts v-if="!loading && quotes.length > 0" :quotes="quotes" />
+
       <!-- Filtres et recherche -->
       <div class="bg-white dark:bg-dark-800 rounded-xl shadow-sm p-6 mb-6 border border-gray-200 dark:border-dark-700">
-        <div class="flex flex-col lg:flex-row gap-4">
+        <div class="flex flex-col lg:flex-row gap-4 mb-4">
           <!-- Barre de recherche -->
           <div class="flex-1">
             <div class="relative">
@@ -82,6 +85,53 @@
             <option value="expired">Expirés</option>
           </select>
         </div>
+
+        <!-- Boutons d'export et actions -->
+        <div class="flex flex-wrap gap-3">
+          <button
+            v-if="filteredQuotes.length > 0"
+            @click="handleExportExcel"
+            class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 font-medium"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            Exporter Excel
+          </button>
+
+          <button
+            v-if="filteredQuotes.length > 0"
+            @click="handleExportPDF"
+            class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200 font-medium"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+            </svg>
+            Exporter PDF
+          </button>
+
+          <button
+            v-if="selectedQuotes.length > 0"
+            @click="handleBulkAction"
+            class="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 font-medium"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+            Actions ({{ selectedQuotes.length }})
+          </button>
+
+          <button
+            v-if="selectedQuotes.length > 0"
+            @click="clearSelection"
+            class="flex items-center gap-2 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors duration-200 font-medium"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+            Désélectionner
+          </button>
+        </div>
       </div>
 
       <!-- Chargement -->
@@ -96,6 +146,14 @@
           <table class="w-full">
             <thead class="bg-gray-50 dark:bg-dark-700 border-b border-gray-200 dark:border-dark-600">
               <tr>
+                <th class="px-3 py-4 text-center">
+                  <input
+                    type="checkbox"
+                    @change="toggleSelectAll"
+                    :checked="isAllSelected"
+                    class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer"
+                  />
+                </th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-dark-700 dark:text-dark-300 uppercase tracking-wider">
                   Référence
                 </th>
@@ -123,8 +181,19 @@
               <tr
                 v-for="quote in paginatedQuotes"
                 :key="quote.id"
-                class="hover:bg-gray-50 dark:hover:bg-dark-700/50 transition-colors"
+                :class="[
+                  'hover:bg-gray-50 dark:hover:bg-dark-700/50 transition-colors',
+                  { 'bg-primary-50 dark:bg-primary-900/20': isQuoteSelected(quote.id) }
+                ]"
               >
+                <td class="px-3 py-4 text-center">
+                  <input
+                    type="checkbox"
+                    :checked="isQuoteSelected(quote.id)"
+                    @change="toggleQuoteSelection(quote.id)"
+                    class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer"
+                  />
+                </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span class="text-sm font-medium text-dark-800 dark:text-dark-100">
                     #{{ quote.quote_number }}
@@ -181,12 +250,13 @@
                       Modifier
                     </button>
                     <button
-                      v-if="quote.status === 'draft'"
+                      v-if="['draft', 'viewed', 'rejected'].includes(quote.status)"
                       @click="sendQuote(quote.id)"
                       :disabled="sending === quote.id"
                       class="text-green-600 hover:text-green-700 dark:text-green-400 font-medium text-sm disabled:opacity-50"
+                      :title="quote.status === 'draft' ? 'Envoyer le devis' : 'Renvoyer le devis'"
                     >
-                      {{ sending === quote.id ? 'Envoi...' : 'Envoyer' }}
+                      {{ sending === quote.id ? 'Envoi...' : (quote.status === 'draft' ? 'Envoyer' : 'Renvoyer') }}
                     </button>
                     <button
                       @click="downloadPDF(quote.id, quote.quote_number)"
@@ -303,6 +373,18 @@
                     />
                   </div>
                 </div>
+                <div>
+                  <label class="block text-sm font-medium text-dark-700 dark:text-dark-300 mb-2">
+                    Description du projet <span class="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    v-model="editForm.project_description"
+                    rows="3"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-700 text-dark-900 dark:text-white focus:ring-2 focus:ring-primary-500"
+                    placeholder="Décrivez le projet..."
+                  ></textarea>
+                </div>
               </div>
 
               <!-- Remise (Admin uniquement) -->
@@ -388,6 +470,76 @@
         </div>
       </div>
     </div>
+
+    <!-- Modale d'actions en masse -->
+    <div
+      v-if="showBulkActionsModal"
+      class="fixed inset-0 z-50 overflow-y-auto"
+      aria-labelledby="modal-title"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div
+          class="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-75 transition-opacity"
+          aria-hidden="true"
+          @click="showBulkActionsModal = false"
+        ></div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div class="relative inline-block align-bottom bg-white dark:bg-dark-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+          <div class="bg-white dark:bg-dark-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+              <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/20 sm:mx-0 sm:h-10 sm:w-10">
+                <svg class="h-6 w-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+              </div>
+              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-1">
+                <h3 class="text-lg leading-6 font-medium text-dark-900 dark:text-dark-100" id="modal-title">
+                  Actions en masse
+                </h3>
+                <div class="mt-2">
+                  <p class="text-sm text-dark-600 dark:text-dark-400">
+                    {{ selectedQuotes.length }} devis sélectionné(s). Choisissez une action :
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-gray-50 dark:bg-dark-700 px-4 py-3 sm:px-6 flex flex-col gap-2">
+            <button
+              @click="bulkSendQuotes"
+              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+              Envoyer tous les devis sélectionnés
+            </button>
+
+            <button
+              @click="bulkExportSelected"
+              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              Exporter en Excel
+            </button>
+
+            <button
+              @click="showBulkActionsModal = false"
+              class="w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-dark-600 shadow-sm px-4 py-2 bg-white dark:bg-dark-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:text-sm"
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -395,8 +547,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { getAllQuotes, sendQuote as sendQuoteAPI, getStatistics, downloadQuotePDF, patchQuote } from '../api/quotes'
 import { useToastStore } from '../stores/toast'
+import { useQuoteExport } from '../composables/useQuoteExport'
+import QuoteCharts from '../components/QuoteCharts.vue'
 
 const toastStore = useToastStore()
+const { exportToExcel, exportToPDF } = useQuoteExport()
 
 const quotes = ref([])
 const statistics = ref(null)
@@ -422,6 +577,10 @@ const editForm = ref({
   discount_value: 0,
   discount_reason: ''
 })
+
+// Variables pour la sélection multiple
+const selectedQuotes = ref([])
+const showBulkActionsModal = ref(false)
 
 const filteredQuotes = computed(() => {
   let result = quotes.value
@@ -601,7 +760,7 @@ const saveQuote = async () => {
       client_email: editForm.value.client_email,
       client_phone: editForm.value.client_phone,
       company_name: editForm.value.company_name,
-      project_description: editForm.value.project_description,
+      project_description: editForm.value.project_description || 'Aucune description fournie',
       discount_type: editForm.value.discount_type || '',
       discount_value: editForm.value.discount_value || 0,
       discount_reason: editForm.value.discount_reason || ''
@@ -630,6 +789,149 @@ const saveQuote = async () => {
   } finally {
     savingQuote.value = false
   }
+}
+
+// Fonctions de sélection multiple
+const isQuoteSelected = (quoteId) => {
+  return selectedQuotes.value.includes(quoteId)
+}
+
+const toggleQuoteSelection = (quoteId) => {
+  const index = selectedQuotes.value.indexOf(quoteId)
+  if (index > -1) {
+    selectedQuotes.value.splice(index, 1)
+  } else {
+    selectedQuotes.value.push(quoteId)
+  }
+}
+
+const isAllSelected = computed(() => {
+  return paginatedQuotes.value.length > 0 &&
+         paginatedQuotes.value.every(quote => selectedQuotes.value.includes(quote.id))
+})
+
+const toggleSelectAll = () => {
+  if (isAllSelected.value) {
+    // Désélectionner tous les devis de la page
+    paginatedQuotes.value.forEach(quote => {
+      const index = selectedQuotes.value.indexOf(quote.id)
+      if (index > -1) {
+        selectedQuotes.value.splice(index, 1)
+      }
+    })
+  } else {
+    // Sélectionner tous les devis de la page
+    paginatedQuotes.value.forEach(quote => {
+      if (!selectedQuotes.value.includes(quote.id)) {
+        selectedQuotes.value.push(quote.id)
+      }
+    })
+  }
+}
+
+const clearSelection = () => {
+  selectedQuotes.value = []
+}
+
+// Fonctions d'export
+const handleExportExcel = () => {
+  try {
+    const quotesToExport = selectedQuotes.value.length > 0
+      ? quotes.value.filter(q => selectedQuotes.value.includes(q.id))
+      : filteredQuotes.value
+
+    if (quotesToExport.length === 0) {
+      toastStore.showToast('Aucun devis à exporter', 'warning')
+      return
+    }
+
+    const success = exportToExcel(quotesToExport, 'devis_admin')
+    if (success) {
+      toastStore.showToast(`${quotesToExport.length} devis exportés en Excel`, 'success')
+      clearSelection()
+    }
+  } catch (error) {
+    console.error('Erreur lors de l\'export Excel:', error)
+    toastStore.showToast('Erreur lors de l\'export Excel', 'error')
+  }
+}
+
+const handleExportPDF = () => {
+  try {
+    const quotesToExport = selectedQuotes.value.length > 0
+      ? quotes.value.filter(q => selectedQuotes.value.includes(q.id))
+      : filteredQuotes.value
+
+    if (quotesToExport.length === 0) {
+      toastStore.showToast('Aucun devis à exporter', 'warning')
+      return
+    }
+
+    // Préparer les statistiques pour le PDF
+    const stats = {
+      total: quotesToExport.length,
+      draft: quotesToExport.filter(q => q.status === 'draft').length,
+      sent: quotesToExport.filter(q => q.status === 'sent').length,
+      viewed: quotesToExport.filter(q => q.status === 'viewed').length,
+      accepted: quotesToExport.filter(q => q.status === 'accepted').length,
+      rejected: quotesToExport.filter(q => q.status === 'rejected').length,
+      expired: quotesToExport.filter(q => q.status === 'expired').length,
+      accepted_revenue: quotesToExport
+        .filter(q => q.status === 'accepted')
+        .reduce((sum, q) => sum + parseFloat(q.total_price || 0), 0),
+      pending_revenue: quotesToExport
+        .filter(q => ['sent', 'viewed'].includes(q.status))
+        .reduce((sum, q) => sum + parseFloat(q.total_price || 0), 0)
+    }
+
+    const success = exportToPDF(quotesToExport, stats, 'rapport_devis_admin')
+    if (success) {
+      toastStore.showToast(`Rapport PDF généré pour ${quotesToExport.length} devis`, 'success')
+      clearSelection()
+    }
+  } catch (error) {
+    console.error('Erreur lors de l\'export PDF:', error)
+    toastStore.showToast('Erreur lors de l\'export PDF', 'error')
+  }
+}
+
+// Actions en masse
+const handleBulkAction = () => {
+  if (selectedQuotes.value.length === 0) {
+    toastStore.showToast('Aucun devis sélectionné', 'warning')
+    return
+  }
+  showBulkActionsModal.value = true
+}
+
+const bulkSendQuotes = async () => {
+  try {
+    const selectedItems = quotes.value.filter(q => selectedQuotes.value.includes(q.id))
+    const sendableQuotes = selectedItems.filter(q => ['draft', 'viewed', 'rejected'].includes(q.status))
+
+    if (sendableQuotes.length === 0) {
+      toastStore.showToast('Aucun devis ne peut être envoyé (seuls les brouillons, consultés et refusés sont envoyables)', 'warning')
+      return
+    }
+
+    for (const quote of sendableQuotes) {
+      await sendQuoteAPI(quote.id)
+    }
+
+    toastStore.showToast(`${sendableQuotes.length} devis envoyés avec succès`, 'success')
+    clearSelection()
+    showBulkActionsModal.value = false
+    await loadQuotes()
+    await loadStatistics()
+  } catch (error) {
+    console.error('Erreur lors de l\'envoi en masse:', error)
+    toastStore.showToast('Erreur lors de l\'envoi en masse', 'error')
+  }
+}
+
+const bulkExportSelected = () => {
+  showBulkActionsModal.value = false
+  handleExportExcel()
 }
 
 onMounted(() => {

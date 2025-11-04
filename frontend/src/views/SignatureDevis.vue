@@ -207,7 +207,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getQuoteByToken, signQuote, rejectQuote as rejectQuoteAPI } from '../api/quotes'
 import { useToastStore } from '../stores/toast'
@@ -281,6 +281,10 @@ const getMousePos = (e) => {
 }
 
 const startDrawing = (e) => {
+  if (!ctx.value) {
+    initCanvas()
+    return
+  }
   isDrawing.value = true
   const pos = getMousePos(e)
   ctx.value.beginPath()
@@ -289,20 +293,21 @@ const startDrawing = (e) => {
 }
 
 const draw = (e) => {
-  if (!isDrawing.value) return
+  if (!isDrawing.value || !ctx.value) return
   const pos = getMousePos(e)
   ctx.value.lineTo(pos.x, pos.y)
   ctx.value.stroke()
 }
 
 const stopDrawing = () => {
-  if (isDrawing.value) {
+  if (isDrawing.value && ctx.value) {
     ctx.value.closePath()
     isDrawing.value = false
   }
 }
 
 const clearSignature = () => {
+  if (!ctx.value || !signatureCanvas.value) return
   const canvas = signatureCanvas.value
   ctx.value.clearRect(0, 0, canvas.width, canvas.height)
   hasSignature.value = false
@@ -366,7 +371,6 @@ const loadQuote = async () => {
     loading.value = true
     const response = await getQuoteByToken(route.params.token)
     quote.value = response.data
-    initCanvas()
   } catch (err) {
     console.error('Erreur lors du chargement du devis:', err)
     error.value = err.response?.data?.error || 'Lien invalide ou expiré'
@@ -374,6 +378,15 @@ const loadQuote = async () => {
     loading.value = false
   }
 }
+
+// Initialiser le canvas quand le composant est chargé et que le devis n'est pas déjà accepté
+watch([quote, loading], ([newQuote, newLoading]) => {
+  if (newQuote && !newLoading && newQuote.status !== 'accepted') {
+    nextTick(() => {
+      initCanvas()
+    })
+  }
+})
 
 onMounted(() => {
   loadQuote()
