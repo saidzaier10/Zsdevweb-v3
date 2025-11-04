@@ -11,7 +11,7 @@
         </div>
 
         <!-- Overlay gradient pour maintenir la lisibilité -->
-        <div class="absolute inset-0 bg-gradient-to-br from-primary-900/85 via-primary-800/75 to-secondary-900/85 dark:from-primary-950/92 dark:via-primary-900/85 dark:to-secondary-950/92 z-10"></div>
+        <div class="absolute inset-0 bg-gradient-to-br from-primary-900/40 via-primary-800/35 to-secondary-900/40 dark:from-primary-950/50 dark:via-primary-900/45 dark:to-secondary-950/50 z-10"></div>
 
         <!-- Animated overlay pattern (optionnel - pour effet dynamique) -->
         <div class="absolute inset-0 opacity-10 z-20">
@@ -22,9 +22,9 @@
 
       <div class="container mx-auto px-4 relative z-10">
         <div class="max-w-4xl mx-auto text-center">
-          <h1 class="text-5xl md:text-7xl font-display font-bold mb-6 animate-fade-in-slow">
+          <h1 class="text-5xl md:text-7xl font-display font-bold mb-6 animate-fade-in-slow pb-4">
             Créons ensemble votre
-            <span class="block bg-gradient-to-r from-secondary-300 to-white bg-clip-text text-transparent">
+            <span class="block bg-gradient-to-r from-white to-secondary-200 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)] py-2">
               présence digitale
             </span>
           </h1>

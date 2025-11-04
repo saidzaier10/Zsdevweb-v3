@@ -38,7 +38,7 @@
 
         <div v-else class="bg-white dark:bg-dark-800 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-dark-700">
           <!-- Étape 1 : Informations client -->
-          <div v-if="currentStep === 1" class="space-y-6 animate-fade-in">
+          <div v-if="currentStep === 1" class="space-y-6 animate-fade-in-auto">
             <div class="text-center mb-6">
               <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full mb-4">
                 <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +103,7 @@
           </div>
 
           <!-- Étape 2 : Type de projet -->
-          <div v-if="currentStep === 2" class="space-y-6 animate-fade-in">
+          <div v-if="currentStep === 2" class="space-y-6 animate-fade-in-auto">
             <div class="text-center mb-6">
               <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full mb-4">
                 <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,7 +140,7 @@
           </div>
 
           <!-- Étape 3 : Option de design -->
-          <div v-if="currentStep === 3" class="space-y-6 animate-fade-in">
+          <div v-if="currentStep === 3" class="space-y-6 animate-fade-in-auto">
             <div class="text-center mb-6">
               <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full mb-4">
                 <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -177,7 +177,7 @@
           </div>
 
           <!-- Étape 4 : Niveau de complexité -->
-          <div v-if="currentStep === 4" class="space-y-6 animate-fade-in">
+          <div v-if="currentStep === 4" class="space-y-6 animate-fade-in-auto">
             <div class="text-center mb-6">
               <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full mb-4">
                 <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,7 +214,7 @@
           </div>
 
           <!-- Étape 5 : Options supplémentaires -->
-          <div v-if="currentStep === 5" class="space-y-6 animate-fade-in">
+          <div v-if="currentStep === 5" class="space-y-6 animate-fade-in-auto">
             <div class="text-center mb-6">
               <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full mb-4">
                 <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -267,7 +267,7 @@
           </div>
 
           <!-- Étape 6 : Description et deadline -->
-          <div v-if="currentStep === 6" class="space-y-6 animate-fade-in">
+          <div v-if="currentStep === 6" class="space-y-6 animate-fade-in-auto">
             <div class="text-center mb-6">
               <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full mb-4">
                 <svg class="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -308,7 +308,7 @@
           </div>
 
           <!-- Étape 7 : Récapitulatif -->
-          <div v-if="currentStep === 7" class="space-y-6 animate-fade-in">
+          <div v-if="currentStep === 7" class="space-y-6 animate-fade-in-auto">
             <div class="text-center mb-6">
               <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full mb-4">
                 <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
