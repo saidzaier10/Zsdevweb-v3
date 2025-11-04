@@ -26,12 +26,17 @@ export const useAuthStore = defineStore('auth', {
     async login(credentials) {
       try {
         const response = await authAPI.login(credentials)
-        console.log('Login response:', response.data)
+        console.log('[Auth Store] Login response:', response.data)
+        console.log('[Auth Store] Tokens reçus:', response.data.tokens ? 'OUI' : 'NON')
+        if (response.data.tokens) {
+          console.log('[Auth Store] Structure tokens:', Object.keys(response.data.tokens))
+        }
         this.setTokens(response.data.tokens)
         this.user = response.data.user
+        console.log('[Auth Store] Login terminé, user:', this.user?.username)
         return response
       } catch (error) {
-        console.error('Login error:', error.response?.data)
+        console.error('[Auth Store] Login error:', error.response?.data)
         throw error
       }
     },
@@ -59,11 +64,14 @@ export const useAuthStore = defineStore('auth', {
     },
 
     setTokens(tokens) {
+      console.log('[Auth Store] setTokens appelé avec:', tokens ? 'tokens présents' : 'tokens absents')
       this.accessToken = tokens.access
       this.refreshToken = tokens.refresh
       this.isAuthenticated = true
       localStorage.setItem('accessToken', tokens.access)
       localStorage.setItem('refreshToken', tokens.refresh)
+      console.log('[Auth Store] Tokens sauvegardés dans localStorage')
+      console.log('[Auth Store] Vérification - accessToken:', localStorage.getItem('accessToken') ? 'OK' : 'ABSENT')
     },
 
     clearAuth() {

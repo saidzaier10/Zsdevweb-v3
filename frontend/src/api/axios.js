@@ -26,10 +26,28 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('accessToken')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+      console.log(`[Axios] Token ajouté pour ${config.method.toUpperCase()} ${config.url}`)
+    } else {
+      console.warn(`[Axios] Aucun token trouvé dans localStorage pour ${config.method.toUpperCase()} ${config.url}`)
     }
     return config
   },
   (error) => {
+    return Promise.reject(error)
+  }
+)
+
+// Intercepteur pour gérer les réponses et les erreurs
+apiClient.interceptors.response.use(
+  (response) => {
+    return response
+  },
+  async (error) => {
+    // Si erreur 401 (non autorisé), le token est peut-être expiré
+    if (error.response?.status === 401) {
+      console.error('[Axios] Erreur 401 - Token invalide ou expiré')
+      // On pourrait implémenter le refresh token ici
+    }
     return Promise.reject(error)
   }
 )
