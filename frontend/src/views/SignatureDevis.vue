@@ -65,9 +65,40 @@
               <span class="text-dark-700 dark:text-dark-300">Durée estimée</span>
               <span class="font-semibold text-dark-800 dark:text-dark-100">{{ quote.estimated_duration_days }} jours</span>
             </div>
-            <div class="flex justify-between py-4 border-t-2 border-gray-300 dark:border-dark-600">
-              <span class="text-xl font-bold text-dark-800 dark:text-dark-100">Prix total</span>
-              <span class="text-2xl font-bold gradient-text">{{ quote.total_ttc }} €</span>
+
+            <!-- Détails financiers avec remise -->
+            <div class="border-t-2 border-gray-300 dark:border-dark-600 pt-4 mt-2 space-y-2">
+              <div class="flex justify-between py-1">
+                <span class="text-dark-700 dark:text-dark-300">Sous-total HT</span>
+                <span class="font-semibold text-dark-800 dark:text-dark-100">{{ quote.subtotal_ht }} €</span>
+              </div>
+
+              <!-- Affichage de la remise si présente -->
+              <div v-if="quote.discount_amount > 0" class="flex justify-between py-1 text-green-600 dark:text-green-400">
+                <span class="flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                  </svg>
+                  Remise
+                  <span v-if="quote.discount_reason" class="text-xs">({{ quote.discount_reason }})</span>
+                </span>
+                <span class="font-semibold">-{{ quote.discount_amount }} €</span>
+              </div>
+
+              <div v-if="quote.discount_amount > 0" class="flex justify-between py-1">
+                <span class="text-dark-700 dark:text-dark-300">Sous-total après remise</span>
+                <span class="font-semibold text-dark-800 dark:text-dark-100">{{ (parseFloat(quote.subtotal_ht) - parseFloat(quote.discount_amount)).toFixed(2) }} €</span>
+              </div>
+
+              <div class="flex justify-between py-1">
+                <span class="text-dark-700 dark:text-dark-300">TVA ({{ quote.tva_rate }}%)</span>
+                <span class="font-semibold text-dark-800 dark:text-dark-100">{{ quote.tva_amount }} €</span>
+              </div>
+
+              <div class="flex justify-between py-3 border-t-2 border-primary-300 dark:border-primary-700 mt-2">
+                <span class="text-xl font-bold text-dark-800 dark:text-dark-100">Total TTC</span>
+                <span class="text-2xl font-bold gradient-text">{{ quote.total_ttc }} €</span>
+              </div>
             </div>
           </div>
         </div>

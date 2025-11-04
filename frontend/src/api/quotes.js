@@ -70,6 +70,16 @@ export const duplicateQuote = (id) => {
   return apiClient.post(`/api/quotes/quotes/${id}/duplicate/`)
 }
 
+// Mettre à jour un devis (admin uniquement)
+export const updateQuote = (id, quoteData) => {
+  return apiClient.put(`/api/quotes/quotes/${id}/`, quoteData)
+}
+
+// Mettre à jour partiellement un devis (admin uniquement)
+export const patchQuote = (id, partialData) => {
+  return apiClient.patch(`/api/quotes/quotes/${id}/`, partialData)
+}
+
 // Statistiques (admin uniquement)
 export const getStatistics = () => {
   return apiClient.get('/api/quotes/quotes/statistics/')

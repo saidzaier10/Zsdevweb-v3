@@ -142,9 +142,14 @@
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <span class="text-sm font-semibold text-dark-800 dark:text-dark-100">
-                    {{ quote.total_price }} €
-                  </span>
+                  <div class="text-sm">
+                    <div class="font-semibold text-dark-800 dark:text-dark-100">
+                      {{ quote.total_price }} €
+                    </div>
+                    <div v-if="quote.discount_amount > 0" class="text-xs text-green-600 dark:text-green-400">
+                      Remise: -{{ quote.discount_amount }}€
+                    </div>
+                  </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span class="text-sm text-dark-600 dark:text-dark-400">
@@ -169,6 +174,12 @@
                     >
                       Voir
                     </router-link>
+                    <button
+                      @click="openEditModal(quote)"
+                      class="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 font-medium text-sm"
+                    >
+                      Modifier
+                    </button>
                     <button
                       v-if="quote.status === 'draft'"
                       @click="sendQuote(quote.id)"
@@ -229,12 +240,160 @@
         <p class="text-dark-600 dark:text-dark-300">Aucun devis ne correspond à vos critères de recherche.</p>
       </div>
     </div>
+
+    <!-- Modale d'édition de devis -->
+    <div
+      v-if="showEditModal"
+      class="fixed inset-0 z-50 overflow-y-auto"
+      @click.self="closeEditModal"
+    >
+      <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Overlay -->
+        <div class="fixed inset-0 transition-opacity bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-75" @click="closeEditModal"></div>
+
+        <!-- Modal -->
+        <div class="inline-block align-bottom bg-white dark:bg-dark-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+          <div class="bg-white dark:bg-dark-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-2xl font-bold text-dark-900 dark:text-white">
+                Modifier le devis #{{ editingQuote?.quote_number }}
+              </h3>
+              <button @click="closeEditModal" class="text-gray-400 hover:text-gray-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+
+            <div v-if="editingQuote" class="space-y-6">
+              <!-- Informations client -->
+              <div class="space-y-4">
+                <h4 class="text-lg font-semibold text-dark-800 dark:text-dark-100">Informations client</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-dark-700 dark:text-dark-300 mb-2">Nom</label>
+                    <input
+                      v-model="editForm.client_name"
+                      type="text"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-700 text-dark-900 dark:text-white focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-dark-700 dark:text-dark-300 mb-2">Email</label>
+                    <input
+                      v-model="editForm.client_email"
+                      type="email"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-700 text-dark-900 dark:text-white focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-dark-700 dark:text-dark-300 mb-2">Téléphone</label>
+                    <input
+                      v-model="editForm.client_phone"
+                      type="tel"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-700 text-dark-900 dark:text-white focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-dark-700 dark:text-dark-300 mb-2">Entreprise</label>
+                    <input
+                      v-model="editForm.company_name"
+                      type="text"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-700 text-dark-900 dark:text-white focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Remise (Admin uniquement) -->
+              <div class="space-y-4 border-t border-gray-200 dark:border-dark-700 pt-6">
+                <h4 class="text-lg font-semibold text-dark-800 dark:text-dark-100">Remise</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-dark-700 dark:text-dark-300 mb-2">Type de remise</label>
+                    <select
+                      v-model="editForm.discount_type"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-700 text-dark-900 dark:text-white focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="">Aucune remise</option>
+                      <option value="percent">Pourcentage (%)</option>
+                      <option value="fixed">Montant fixe (€)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-dark-700 dark:text-dark-300 mb-2">
+                      Valeur {{ editForm.discount_type === 'percent' ? '(%)' : '(€)' }}
+                    </label>
+                    <input
+                      v-model.number="editForm.discount_value"
+                      type="number"
+                      min="0"
+                      :max="editForm.discount_type === 'percent' ? 100 : 999999"
+                      step="0.01"
+                      :disabled="!editForm.discount_type"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-700 text-dark-900 dark:text-white focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+                    />
+                  </div>
+                  <div class="md:col-span-3">
+                    <label class="block text-sm font-medium text-dark-700 dark:text-dark-300 mb-2">Raison de la remise</label>
+                    <input
+                      v-model="editForm.discount_reason"
+                      type="text"
+                      :disabled="!editForm.discount_type"
+                      placeholder="Ex: Client fidèle, Promotion, etc."
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-700 text-dark-900 dark:text-white focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+                <!-- Aperçu de la remise -->
+                <div v-if="editForm.discount_type && editForm.discount_value > 0" class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                  <p class="text-sm text-green-800 dark:text-green-200">
+                    <strong>Remise appliquée :</strong>
+                    <span v-if="editForm.discount_type === 'percent'">{{ editForm.discount_value }}% sur le montant HT</span>
+                    <span v-else>{{ editForm.discount_value }}€</span>
+                    <span v-if="editForm.discount_reason"> - {{ editForm.discount_reason }}</span>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Description du projet -->
+              <div class="space-y-4 border-t border-gray-200 dark:border-dark-700 pt-6">
+                <h4 class="text-lg font-semibold text-dark-800 dark:text-dark-100">Description du projet</h4>
+                <textarea
+                  v-model="editForm.project_description"
+                  rows="4"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-700 text-dark-900 dark:text-white focus:ring-2 focus:ring-primary-500"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="bg-gray-50 dark:bg-dark-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-3">
+            <button
+              @click="saveQuote"
+              :disabled="savingQuote"
+              class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+            >
+              {{ savingQuote ? 'Enregistrement...' : 'Enregistrer' }}
+            </button>
+            <button
+              @click="closeEditModal"
+              :disabled="savingQuote"
+              class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-dark-600 shadow-sm px-4 py-2 bg-white dark:bg-dark-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto sm:text-sm"
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getAllQuotes, sendQuote as sendQuoteAPI, getStatistics, downloadQuotePDF } from '../api/quotes'
+import { getAllQuotes, sendQuote as sendQuoteAPI, getStatistics, downloadQuotePDF, patchQuote } from '../api/quotes'
 import { useToastStore } from '../stores/toast'
 
 const toastStore = useToastStore()
@@ -248,6 +407,21 @@ const currentPage = ref(1)
 const itemsPerPage = 20
 const sending = ref(null)
 const downloading = ref(null)
+
+// Variables pour la modale d'édition
+const showEditModal = ref(false)
+const editingQuote = ref(null)
+const savingQuote = ref(false)
+const editForm = ref({
+  client_name: '',
+  client_email: '',
+  client_phone: '',
+  company_name: '',
+  project_description: '',
+  discount_type: '',
+  discount_value: 0,
+  discount_reason: ''
+})
 
 const filteredQuotes = computed(() => {
   let result = quotes.value
@@ -380,6 +554,71 @@ const loadData = async () => {
     await Promise.all([loadQuotes(), loadStatistics()])
   } finally {
     loading.value = false
+  }
+}
+
+// Fonctions de gestion de la modale d'édition
+const openEditModal = (quote) => {
+  editingQuote.value = quote
+  editForm.value = {
+    client_name: quote.client_name || '',
+    client_email: quote.client_email || '',
+    client_phone: quote.client_phone || '',
+    company_name: quote.company_name || '',
+    project_description: quote.project_description || '',
+    discount_type: quote.discount_type || '',
+    discount_value: quote.discount_value || 0,
+    discount_reason: quote.discount_reason || ''
+  }
+  showEditModal.value = true
+}
+
+const closeEditModal = () => {
+  showEditModal.value = false
+  editingQuote.value = null
+  savingQuote.value = false
+}
+
+const saveQuote = async () => {
+  if (!editingQuote.value) return
+
+  try {
+    savingQuote.value = true
+
+    // Préparer les données à envoyer
+    const updateData = {
+      client_name: editForm.value.client_name,
+      client_email: editForm.value.client_email,
+      client_phone: editForm.value.client_phone,
+      company_name: editForm.value.company_name,
+      project_description: editForm.value.project_description,
+      discount_type: editForm.value.discount_type || '',
+      discount_value: editForm.value.discount_value || 0,
+      discount_reason: editForm.value.discount_reason || ''
+    }
+
+    // Si pas de remise, on met les valeurs à zéro
+    if (!updateData.discount_type) {
+      updateData.discount_value = 0
+      updateData.discount_reason = ''
+    }
+
+    await patchQuote(editingQuote.value.id, updateData)
+
+    toastStore.showToast('Devis mis à jour avec succès', 'success')
+    closeEditModal()
+
+    // Recharger les données
+    await loadQuotes()
+    await loadStatistics()
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour du devis:', error)
+    toastStore.showToast(
+      error.response?.data?.error || 'Erreur lors de la mise à jour du devis',
+      'error'
+    )
+  } finally {
+    savingQuote.value = false
   }
 }
 
