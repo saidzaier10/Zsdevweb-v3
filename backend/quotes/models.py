@@ -424,12 +424,30 @@ class Quote(models.Model):
     
     def calculate_prices(self, skip_m2m=False):
         """
-        Calcule tous les prix du devis avec remise
+        Calcule tous les prix du devis avec remise et génère la répartition des paiements.
+
+        Cette méthode est le cœur du calcul tarifaire. Elle agrège tous les composants
+        du devis (type de projet, design, complexité, options) et applique la remise
+        puis la TVA pour obtenir le prix final TTC.
+
+        Étapes du calcul :
+        1. Prix de base du type de projet
+        2. Ajout du supplément de design
+        3. Application du multiplicateur de complexité
+        4. Ajout des options supplémentaires (one_time uniquement)
+        5. Application de la remise (pourcentage ou montant fixe)
+        6. Calcul de la TVA
+        7. Obtention du total TTC
+        8. Répartition en 3 paiements (30% / 40% / 30%)
 
         Args:
-            skip_m2m: Si True, ignore les relations ManyToMany (pour la création initiale)
+            skip_m2m: Si True, ignore les relations ManyToMany (utilisé lors de la création
+                     initiale du devis avant qu'il ait un ID en base)
+
+        Returns:
+            dict: Dictionnaire contenant tous les montants calculés
         """
-        # 1. Prix de base
+        # 1. Prix de base du type de projet
         subtotal = Decimal('0.00')
 
         if self.project_type:
@@ -489,16 +507,36 @@ class Quote(models.Model):
         }
     
     def generate_quote_number(self):
-        """Génère un numéro de devis unique : DEVIS-YYYYMM-XXX"""
+        """
+        Génère un numéro de devis unique au format : DEVIS-YYYYMM-XXX
+
+        Format :
+        - DEVIS : préfixe fixe
+        - YYYYMM : année et mois (ex: 202511 pour novembre 2025)
+        - XXX : numéro séquentiel sur 3 chiffres (001, 002, 003, etc.)
+
+        Exemple : DEVIS-202511-042 (42ème devis de novembre 2025)
+
+        La numérotation recommence à 001 chaque mois.
+        """
         if not self.quote_number:
             date_part = timezone.now().strftime('%Y%m')
+            # Compte les devis existants pour ce mois et incrémente
             count = Quote.objects.filter(
                 quote_number__startswith=f'DEVIS-{date_part}'
             ).count() + 1
             self.quote_number = f'DEVIS-{date_part}-{count:03d}'
     
     def generate_signature_token(self):
-        """Génère un token unique pour la signature électronique"""
+        """
+        Génère un token unique sécurisé pour la signature électronique.
+
+        Le token fait 64 caractères alphanumériques et est généré avec le module
+        secrets (cryptographiquement sécurisé) pour éviter toute prédiction.
+
+        Ce token est utilisé dans l'URL de signature : /devis/sign/{token}/
+        Il permet d'identifier de manière unique et sécurisée un devis sans authentification.
+        """
         if not self.signature_token:
             alphabet = string.ascii_letters + string.digits
             self.signature_token = ''.join(secrets.choice(alphabet) for _ in range(64))
@@ -530,23 +568,34 @@ class Quote(models.Model):
         return None
     
     def save(self, *args, **kwargs):
-        """Calcule automatiquement les prix avant la sauvegarde"""
-        # Vérifier si c'est une création (pas d'ID)
+        """
+        Surcharge de la méthode save pour automatiser les calculs et générations.
+
+        Actions automatiques lors de la sauvegarde :
+        1. Génération du numéro de devis si absent (format : DEVIS-YYYYMM-XXX)
+        2. Génération du token de signature sécurisé (64 caractères)
+        3. Calcul de la date d'expiration (30 jours après création)
+        4. Calcul automatique de tous les prix (HT, remise, TVA, TTC)
+
+        Note : Le calcul des prix ignore les relations ManyToMany lors de la première
+        sauvegarde (création) car l'objet n'a pas encore d'ID en base.
+        """
+        # Vérifier si c'est une création (l'objet n'a pas encore d'ID en base)
         is_new = self.pk is None
 
-        # Générer le numéro de devis
+        # Génération automatique du numéro de devis si absent
         if not self.quote_number:
             self.generate_quote_number()
 
-        # Générer le token de signature
+        # Génération automatique du token de signature
         if not self.signature_token:
             self.generate_signature_token()
 
-        # Calculer la date d'expiration
+        # Calcul automatique de la date d'expiration (30 jours)
         if not self.expires_at:
             self.calculate_expiration_date()
 
-        # Calculer les prix (skip M2M si création)
+        # Calcul des prix (skip M2M si création car pas encore d'ID)
         prices = self.calculate_prices(skip_m2m=is_new)
         self.subtotal_ht = prices['subtotal_ht']
         self.discount_amount = prices['discount_amount']

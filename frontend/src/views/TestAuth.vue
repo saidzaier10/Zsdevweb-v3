@@ -1,7 +1,13 @@
+<!--
+  ⚠️ PAGE DE TEST - DÉVELOPPEMENT UNIQUEMENT
+  Cette page est utilisée uniquement pour tester et déboguer l'authentification.
+  Elle ne doit PAS être accessible en production.
+  Pour la désactiver, la supprimer de router/index.js
+-->
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-dark-900 py-12">
     <div class="container mx-auto px-4 max-w-4xl">
-      <h1 class="text-3xl font-bold mb-8">🔍 Test d'Authentification</h1>
+      <h1 class="text-3xl font-bold mb-8">🔍 Test d'Authentification (DEV ONLY)</h1>
 
       <!-- Info localStorage -->
       <div class="bg-white dark:bg-dark-800 rounded-lg shadow p-6 mb-6">
@@ -171,7 +177,5 @@ const clearLocalStorage = () => {
 
 onMounted(() => {
   loadData()
-  console.log('=== PAGE TEST AUTH MONTÉE ===')
-  console.log('Token dans localStorage:', accessToken.value ? 'PRÉSENT' : 'ABSENT')
 })
 </script>

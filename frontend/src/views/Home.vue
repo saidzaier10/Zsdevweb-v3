@@ -273,34 +273,29 @@ const loadVideo = () => {
   source.type = 'video/mp4'
   video.appendChild(source)
 
-  // Événement: vidéo prête
+  // Événement: vidéo prête - démarrer la lecture au ralenti
   video.addEventListener('loadeddata', () => {
-    console.log('✅ Vidéo chargée et prête')
     video.playbackRate = 0.5
     video.play().then(() => {
-      console.log('✅ Lecture vidéo démarrée à vitesse 0.5x')
-      // Masquer le fallback
+      // Masquer le fallback après démarrage réussi
       const fallback = document.querySelector('.hero-fallback')
       if (fallback) {
         fallback.style.opacity = '0'
         setTimeout(() => { fallback.style.display = 'none' }, 300)
       }
-    }).catch(err => {
-      console.error('❌ Erreur lors du démarrage de la lecture:', err)
+    }).catch(() => {
+      // Erreur silencieuse si la lecture échoue
     })
   })
 
-  // Événement: erreur
-  video.addEventListener('error', (e) => {
-    console.error('❌ Erreur de chargement de la vidéo:', e)
-    console.error('Détails:', video.error)
+  // Événement: erreur de chargement vidéo
+  video.addEventListener('error', () => {
+    // Erreur silencieuse - le fallback restera visible
   })
 
-  // Insérer la vidéo au début du conteneur
+  // Insérer la vidéo au début du conteneur hero
   container.insertBefore(video, container.firstChild)
   heroVideo.value = video
-
-  console.log('📹 Élément vidéo créé et inséré dans le DOM')
 }
 
 const stats = ref({

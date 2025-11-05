@@ -20,15 +20,12 @@ const apiClient = axios.create({
   },
 })
 
-// Intercepteur pour ajouter le token à chaque requête
+// Intercepteur pour ajouter le token JWT à chaque requête
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
-      console.log(`[Axios] Token ajouté pour ${config.method.toUpperCase()} ${config.url}`)
-    } else {
-      console.warn(`[Axios] Aucun token trouvé dans localStorage pour ${config.method.toUpperCase()} ${config.url}`)
     }
     return config
   },
@@ -38,16 +35,14 @@ apiClient.interceptors.request.use(
 )
 
 // Intercepteur pour gérer les réponses et les erreurs
+// En cas d'erreur 401, le token est invalide ou expiré
 apiClient.interceptors.response.use(
   (response) => {
     return response
   },
   async (error) => {
-    // Si erreur 401 (non autorisé), le token est peut-être expiré
-    if (error.response?.status === 401) {
-      console.error('[Axios] Erreur 401 - Token invalide ou expiré')
-      // On pourrait implémenter le refresh token ici
-    }
+    // Si erreur 401 (non autorisé), le token est invalide ou expiré
+    // TODO: Implémenter le refresh token automatique ici si nécessaire
     return Promise.reject(error)
   }
 )

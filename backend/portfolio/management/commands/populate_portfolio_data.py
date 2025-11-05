@@ -1,5 +1,16 @@
 """
-Commande pour peupler la base de données Portfolio avec des données de test
+Commande Django pour initialiser et peupler la base de données Portfolio avec des données de démonstration.
+
+Cette commande permet de :
+- Créer les technologies utilisées (Python, Django, Vue.js, React, etc.)
+- Ajouter des projets de portfolio avec descriptions détaillées
+- Associer les technologies aux projets
+- Créer des témoignages clients pour chaque projet
+
+Usage:
+    python manage.py populate_portfolio_data
+
+Note: Cette commande peut être exécutée plusieurs fois (idempotente).
 """
 from django.core.management.base import BaseCommand
 from portfolio.models import Technology, Project, ProjectImage, Testimonial
@@ -11,9 +22,19 @@ class Command(BaseCommand):
     help = 'Peuple la base de données avec des données de test pour le Portfolio'
 
     def handle(self, *args, **kwargs):
+        """
+        Point d'entrée principal de la commande.
+
+        Processus :
+        1. Création des technologies (frontend, backend, database, devops)
+        2. Création des projets portfolio avec leurs détails
+        3. Association des technologies aux projets (ManyToMany)
+        4. Ajout des témoignages clients pour chaque projet
+        """
         self.stdout.write(self.style.SUCCESS('🚀 Début du peuplement de la base de données Portfolio...'))
-        
-        # 1. Créer les Technologies
+
+        # === ÉTAPE 1 : Création des Technologies ===
+        # Technologies organisées par catégorie : frontend, backend, database, devops
         technologies_data = [
             {'name': 'Python', 'icon': 'devicon-python-plain', 'category': 'backend'},
             {'name': 'Django', 'icon': 'devicon-django-plain', 'category': 'backend'},
@@ -29,6 +50,7 @@ class Command(BaseCommand):
             {'name': 'Node.js', 'icon': 'devicon-nodejs-plain', 'category': 'backend'},
         ]
         
+        # Création/mise à jour des technologies (opération idempotente)
         technologies = {}
         for tech_data in technologies_data:
             tech, created = Technology.objects.update_or_create(
@@ -38,10 +60,11 @@ class Command(BaseCommand):
             technologies[tech_data['name']] = tech
             action = "créée" if created else "mise à jour"
             self.stdout.write(f'  ✓ Technologie "{tech.name}" {action}')
-        
+
         self.stdout.write(self.style.SUCCESS(f'\n✅ {len(technologies_data)} technologies synchronisées\n'))
-        
-        # 2. Créer les Projets
+
+        # === ÉTAPE 2 : Création des Projets Portfolio ===
+        # Chaque projet contient : titre, description, technologies utilisées, URLs, dates
         projects_data = [
             {
                 'title': 'Site E-commerce de Mode',
@@ -220,18 +243,20 @@ Django, Tailwind CSS, PostgreSQL, Authentification sécurisée
             },
         ]
         
+        # Traitement des projets avec association des technologies
         projects = {}
         for proj_data in projects_data:
-            # Extraire les technologies
+            # Extraire les noms de technologies pour traitement séparé (relation ManyToMany)
             tech_names = proj_data.pop('technologies')
-            
-            # Créer/Mettre à jour le projet
+
+            # Création/mise à jour du projet (idempotent via slug unique)
             project, created = Project.objects.update_or_create(
                 slug=proj_data['slug'],
                 defaults=proj_data
             )
-            
-            # Associer les technologies
+
+            # Association des technologies au projet (relation ManyToMany)
+            # set() remplace toutes les associations existantes
             project.technologies.set([technologies[name] for name in tech_names])
             
             projects[proj_data['slug']] = project
@@ -239,8 +264,9 @@ Django, Tailwind CSS, PostgreSQL, Authentification sécurisée
             self.stdout.write(f'  ✓ Projet "{project.title}" {action}')
         
         self.stdout.write(self.style.SUCCESS(f'\n✅ {len(projects_data)} projets synchronisés\n'))
-        
-        # 3. Créer les Témoignages
+
+        # === ÉTAPE 3 : Création des Témoignages Clients ===
+        # Témoignages associés à chaque projet pour crédibilité et social proof
         testimonials_data = [
             {
                 'client_name': 'Sophie Martin',
@@ -292,28 +318,28 @@ Django, Tailwind CSS, PostgreSQL, Authentification sécurisée
             },
         ]
         
+        # Association des témoignages aux projets
         for test_data in testimonials_data:
+            # Conversion du slug de projet en objet Project (foreign key)
             project_slug = test_data.pop('project')
             test_data['project'] = projects[project_slug]
-            
+
+            # Création/mise à jour du témoignage (idempotent via client_name)
             testimonial, created = Testimonial.objects.update_or_create(
                 client_name=test_data['client_name'],
                 defaults=test_data
             )
             action = "créé" if created else "mis à jour"
             self.stdout.write(f'  ✓ Témoignage de "{testimonial.client_name}" {action}')
-        
+
         self.stdout.write(self.style.SUCCESS(f'\n✅ {len(testimonials_data)} témoignages synchronisés\n'))
-        
-        # Résumé final
+
+        # === Résumé final de l'exécution ===
+        # Affichage récapitulatif des données créées
         self.stdout.write(self.style.SUCCESS('=' * 60))
         self.stdout.write(self.style.SUCCESS('🎉 BASE DE DONNÉES PORTFOLIO PEUPLÉE AVEC SUCCÈS !'))
         self.stdout.write(self.style.SUCCESS('=' * 60))
-        self.stdout.write(f'\n📊 Résumé :')
+        self.stdout.write(f'\n📊 Résumé de l\'initialisation :')
         self.stdout.write(f'   • {Technology.objects.count()} technologies')
         self.stdout.write(f'   • {Project.objects.count()} projets')
-        self.stdout.write(f'   • {Testimonial.objects.count()} témoignages')
-        self.stdout.write(f'\n📝 Prochaines étapes :')
-        self.stdout.write('   1. Visitez http://localhost:5173/portfolio')
-        self.stdout.write('   2. Accédez à l\'admin : http://localhost:8000/admin')
-        self.stdout.write('   3. Personnalisez vos projets et ajoutez des images !\n')
+        self.stdout.write(f'   • {Testimonial.objects.count()} témoignages\n')

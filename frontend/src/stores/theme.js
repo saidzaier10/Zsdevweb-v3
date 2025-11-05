@@ -18,7 +18,7 @@ export const useThemeStore = defineStore('theme', {
 
     applyTheme() {
       const html = document.documentElement
-      
+
       if (this.isDark) {
         html.classList.add('dark')
         localStorage.setItem('darkMode', 'true')
@@ -26,24 +26,19 @@ export const useThemeStore = defineStore('theme', {
         html.classList.remove('dark')
         localStorage.setItem('darkMode', 'false')
       }
-      
-      console.log('Theme applied:', this.isDark ? 'dark' : 'light')
-      console.log('HTML classes:', html.classList.toString())
     },
 
     initTheme() {
-      // Vérifier le localStorage
+      // Récupération du thème sauvegardé dans localStorage
       const savedTheme = localStorage.getItem('darkMode')
-      
-      console.log('Saved theme:', savedTheme)
-      
+
       // Si rien n'est sauvegardé, utiliser light mode par défaut
       if (savedTheme === null) {
         this.isDark = false
       } else {
         this.isDark = savedTheme === 'true'
       }
-      
+
       this.applyTheme()
     }
   }

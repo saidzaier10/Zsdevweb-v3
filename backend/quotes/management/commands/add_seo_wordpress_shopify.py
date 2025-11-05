@@ -1,5 +1,16 @@
 """
-Commande pour ajouter de nouvelles options SEO et types de projets WordPress/Shopify
+Commande Django pour ajouter des types de projets et options supplémentaires spécifiques WordPress/Shopify.
+
+Cette commande étend les données de base en ajoutant :
+- Types de projets WordPress (vitrine, blog, WooCommerce, migration)
+- Types de projets Shopify (boutique standard, premium, migration)
+- Options SEO avancées (audit, netlinking, Core Web Vitals, etc.)
+- Options spécifiques aux plateformes (plugins, thèmes, formations)
+
+Usage:
+    python manage.py add_seo_wordpress_shopify
+
+Note: Cette commande complète populate_quotes_data.py et peut être exécutée plusieurs fois (idempotente).
 """
 from django.core.management.base import BaseCommand
 from quotes.models import ProjectType, SupplementaryOption
@@ -10,9 +21,18 @@ class Command(BaseCommand):
     help = 'Ajoute des options SEO avancées et types de projets WordPress/Shopify'
 
     def handle(self, *args, **kwargs):
+        """
+        Point d'entrée de la commande d'ajout des options WordPress/Shopify.
+
+        Processus :
+        1. Ajout des types de projets WordPress et Shopify
+        2. Ajout des options SEO avancées
+        3. Ajout des options spécifiques aux plateformes (plugins, thèmes, apps)
+        """
         self.stdout.write(self.style.SUCCESS('🚀 Ajout de nouvelles options...'))
 
-        # 1. Ajouter de nouveaux types de projets WordPress et Shopify
+        # === ÉTAPE 1 : Types de projets WordPress et Shopify ===
+        # Ajout de types de projets basés sur les CMS populaires
         new_project_types = [
             {
                 'name': 'Site WordPress Vitrine',
@@ -58,6 +78,7 @@ class Command(BaseCommand):
             },
         ]
 
+        # Création/mise à jour des types de projets (opération idempotente)
         self.stdout.write('\n📦 Ajout des types de projets WordPress et Shopify...\n')
         for pt_data in new_project_types:
             pt, created = ProjectType.objects.update_or_create(
@@ -69,7 +90,8 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'\n✅ {len(new_project_types)} types de projets ajoutés\n'))
 
-        # 2. Ajouter de nouvelles options SEO avancées
+        # === ÉTAPE 2 : Options SEO avancées ===
+        # Options de référencement naturel pour améliorer la visibilité des sites
         new_seo_options = [
             {
                 'name': 'SEO Local (Google My Business)',
@@ -138,7 +160,8 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'\n✅ {len(new_seo_options)} options SEO ajoutées\n'))
 
-        # 3. Ajouter d'autres options utiles pour WordPress et Shopify
+        # === ÉTAPE 3 : Options spécifiques WordPress et Shopify ===
+        # Options techniques et fonctionnelles pour les plateformes CMS et e-commerce
         new_platform_options = [
             {
                 'name': 'Plugins Premium WordPress (Pack)',
@@ -213,24 +236,20 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'\n✅ {len(new_platform_options)} options plateforme ajoutées\n'))
 
-        # Résumé final
+        # === Résumé final de l'exécution ===
+        # Affichage des statistiques globales et détaillées
         self.stdout.write(self.style.SUCCESS('\n' + '='*60))
         self.stdout.write(self.style.SUCCESS('🎉 AJOUT DES NOUVELLES OPTIONS TERMINÉ !'))
         self.stdout.write(self.style.SUCCESS('='*60))
 
+        # Comptage global en base de données
         total_project_types = ProjectType.objects.count()
         total_options = SupplementaryOption.objects.count()
 
-        self.stdout.write(f'\n📊 Résumé :')
+        self.stdout.write(f'\n📊 État global de la base de données :')
         self.stdout.write(f'   • {total_project_types} types de projets au total')
         self.stdout.write(f'   • {total_options} options supplémentaires au total')
-        self.stdout.write(f'\n   Nouveaux ajouts :')
+        self.stdout.write(f'\n   Nouveaux ajouts de cette exécution :')
         self.stdout.write(f'   • {len(new_project_types)} types de projets (WordPress/Shopify)')
         self.stdout.write(f'   • {len(new_seo_options)} options SEO avancées')
-        self.stdout.write(f'   • {len(new_platform_options)} options WordPress/Shopify')
-
-        self.stdout.write(f'\n📝 Prochaines étapes :')
-        self.stdout.write(f'   1. Testez la création de devis avec les nouvelles options')
-        self.stdout.write(f'   2. Accédez à l\'admin : http://localhost:8000/admin')
-        self.stdout.write(f'   3. Personnalisez les prix selon vos besoins')
-        self.stdout.write('')
+        self.stdout.write(f'   • {len(new_platform_options)} options WordPress/Shopify\n')

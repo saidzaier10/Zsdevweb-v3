@@ -1,5 +1,16 @@
 """
-Commande pour peupler la base de données Quotes avec des données de test
+Commande Django pour initialiser et peupler la base de données Quotes avec des données de configuration.
+
+Cette commande permet de :
+- Configurer les informations de l'entreprise (Company)
+- Créer les types de projets disponibles (ProjectType)
+- Initialiser les options de design (DesignOption)
+- Définir les niveaux de complexité (ComplexityLevel)
+- Ajouter les options supplémentaires disponibles (SupplementaryOption)
+- Créer des templates de devis pré-configurés (QuoteTemplate)
+
+Usage:
+    python manage.py populate_quotes_data
 """
 from django.core.management.base import BaseCommand
 from quotes.models import (
@@ -17,9 +28,21 @@ class Command(BaseCommand):
     help = 'Peuple la base de données avec des données de test pour les Devis'
 
     def handle(self, *args, **kwargs):
+        """
+        Point d'entrée principal de la commande Django.
+
+        Cette méthode orchestre l'ensemble du processus de peuplement :
+        1. Configuration de l'entreprise
+        2. Création/mise à jour des types de projets
+        3. Configuration des options de design
+        4. Définition des niveaux de complexité
+        5. Ajout des options supplémentaires
+        6. Création des templates de devis
+        """
         self.stdout.write(self.style.SUCCESS('🚀 Début du peuplement de la base de données Quotes...'))
 
-        # 1. Créer ou mettre à jour les informations de l'entreprise
+        # === ÉTAPE 1 : Configuration de l'entreprise ===
+        # Utilise le pattern Singleton pour récupérer/créer l'instance unique de Company
         company = Company.get_instance()
         company.name = "Zsdevweb"
         company.email = "contact@zsdevweb.com"
@@ -35,7 +58,11 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS('\n✅ Entreprise configurée\n'))
 
-        # 2. Créer les Types de Projets
+        # === ÉTAPE 2 : Création des Types de Projets ===
+        # Chaque type de projet définit un type de site web/application avec :
+        # - Un prix de base (base_price)
+        # - Une durée estimée en jours (estimated_days)
+        # - Une description pour le client
         project_types_data = [
             {
                 'name': 'Site Vitrine',
@@ -87,6 +114,8 @@ class Command(BaseCommand):
             },
         ]
 
+        # Itération sur chaque type de projet pour création/mise à jour en base
+        # update_or_create() permet de créer ou mettre à jour si existant (idempotence)
         project_types = {}
         for pt_data in project_types_data:
             pt, created = ProjectType.objects.update_or_create(
@@ -99,7 +128,9 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'\n✅ {len(project_types_data)} types de projets synchronisés\n'))
 
-        # 3. Créer les Options de Design
+        # === ÉTAPE 3 : Création des Options de Design ===
+        # Les options de design permettent au client de choisir le niveau de personnalisation
+        # Chaque option ajoute un supplément au prix de base (price_supplement)
         design_options_data = [
             {
                 'name': 'Design Simple',
@@ -135,7 +166,9 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'\n✅ {len(design_options_data)} options de design synchronisées\n'))
 
-        # 4. Créer les Niveaux de Complexité
+        # === ÉTAPE 4 : Création des Niveaux de Complexité ===
+        # Les niveaux de complexité permettent d'ajuster le prix selon la complexité technique
+        # Le prix final est multiplié par le price_multiplier (ex: 1.5 = +50%)
         complexity_levels_data = [
             {
                 'name': 'Basique',
@@ -171,7 +204,9 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'\n✅ {len(complexity_levels_data)} niveaux de complexité synchronisés\n'))
 
-        # 5. Créer les Options Supplémentaires
+        # === ÉTAPE 5 : Création des Options Supplémentaires ===
+        # Options additionnelles que le client peut ajouter à son devis
+        # Chaque option a un type de facturation : one_time, monthly, ou yearly
         supplementary_options_data = [
             {
                 'name': 'Optimisation SEO',
@@ -307,7 +342,9 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'\n✅ {len(supplementary_options_data)} options supplémentaires synchronisées\n'))
 
-        # 6. Créer les Templates de Devis (optionnel)
+        # === ÉTAPE 6 : Création des Templates de Devis ===
+        # Templates pré-configurés pour accélérer la création de devis
+        # Chaque template combine : type de projet + design + complexité + options
         templates_data = [
             {
                 'name': 'Site Vitrine Standard',
@@ -438,22 +475,24 @@ class Command(BaseCommand):
             },
         ]
 
+        # Traitement des templates : conversion des noms en objets de modèle
         for tpl_data in templates_data:
-            # Extraire les options supplémentaires
+            # Extraire les noms des options supplémentaires pour traitement séparé
             supp_opt_names = tpl_data.pop('supplementary_options')
 
-            # Remplacer les noms par les objets
+            # Conversion des chaînes de caractères en objets de modèle (foreign keys)
             tpl_data['project_type'] = project_types[tpl_data['project_type']]
             tpl_data['design_option'] = design_options[tpl_data['design_option']]
             tpl_data['complexity_level'] = complexity_levels[tpl_data['complexity_level']]
 
-            # Créer/Mettre à jour le template
+            # Création ou mise à jour du template avec update_or_create (opération idempotente)
             template, created = QuoteTemplate.objects.update_or_create(
                 name=tpl_data['name'],
                 defaults=tpl_data
             )
 
-            # Associer les options supplémentaires
+            # Association des options supplémentaires (relation ManyToMany)
+            # set() remplace toutes les associations existantes
             template.supplementary_options.set([supplementary_options[name] for name in supp_opt_names])
 
             action = "créé" if created else "mis à jour"
@@ -461,18 +500,15 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f'\n✅ {len(templates_data)} templates de devis synchronisés\n'))
 
-        # Résumé final
+        # === Résumé final de l'exécution ===
+        # Affichage récapitulatif des données créées/mises à jour
         self.stdout.write(self.style.SUCCESS('=' * 60))
         self.stdout.write(self.style.SUCCESS('🎉 BASE DE DONNÉES QUOTES PEUPLÉE AVEC SUCCÈS !'))
         self.stdout.write(self.style.SUCCESS('=' * 60))
-        self.stdout.write(f'\n📊 Résumé :')
+        self.stdout.write(f'\n📊 Résumé de l\'initialisation :')
         self.stdout.write(f'   • 1 entreprise configurée')
         self.stdout.write(f'   • {ProjectType.objects.count()} types de projets')
         self.stdout.write(f'   • {DesignOption.objects.count()} options de design')
         self.stdout.write(f'   • {ComplexityLevel.objects.count()} niveaux de complexité')
         self.stdout.write(f'   • {SupplementaryOption.objects.count()} options supplémentaires')
-        self.stdout.write(f'   • {QuoteTemplate.objects.count()} templates de devis')
-        self.stdout.write(f'\n📝 Prochaines étapes :')
-        self.stdout.write('   1. Testez la création de devis via l\'API ou l\'admin')
-        self.stdout.write('   2. Accédez à l\'admin : http://localhost:8000/admin')
-        self.stdout.write('   3. Personnalisez les options selon vos besoins\n')
+        self.stdout.write(f'   • {QuoteTemplate.objects.count()} templates de devis\n')

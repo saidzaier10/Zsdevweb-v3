@@ -43,7 +43,7 @@ const removeToast = (id) => {
 }
 
 onMounted(() => {
-  console.log('App mounted, initializing theme...')
+  // Initialisation du thème au montage de l'application
   themeStore.initTheme()
 })
 </script>
