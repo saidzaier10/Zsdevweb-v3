@@ -772,9 +772,20 @@ const saveQuote = async () => {
       updateData.discount_reason = ''
     }
 
+    // Si le devis a été envoyé ou consulté, on le repasse en brouillon
+    // pour que l'admin doive le renvoyer au client pour signature
+    if (editingQuote.value.status === 'sent' || editingQuote.value.status === 'viewed') {
+      updateData.status = 'draft'
+    }
+
     await patchQuote(editingQuote.value.id, updateData)
 
-    toastStore.showToast('Devis mis à jour avec succès', 'success')
+    // Message adapté selon le statut
+    if (editingQuote.value.status === 'sent' || editingQuote.value.status === 'viewed') {
+      toastStore.showToast('Devis mis à jour et repassé en brouillon. Vous devez le renvoyer au client pour signature.', 'success')
+    } else {
+      toastStore.showToast('Devis mis à jour avec succès', 'success')
+    }
     closeEditModal()
 
     // Recharger les données
