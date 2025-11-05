@@ -115,8 +115,8 @@
                   </div>
                   <div>
                     <h3 class="font-bold text-dark-900 dark:text-white mb-1">Email</h3>
-                    <a href="mailto:contact@zsdevweb.com" class="text-dark-600 dark:text-dark-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
-                      contact@zsdevweb.com
+                    <a href="mailto:said.zaier@gmail.com" class="text-dark-600 dark:text-dark-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                      said.zaier@gmail.com
                     </a>
                   </div>
                 </div>
@@ -129,8 +129,8 @@
                   </div>
                   <div>
                     <h3 class="font-bold text-dark-900 dark:text-white mb-1">Téléphone</h3>
-                    <a href="tel:+33XXXXXXXXX" class="text-dark-600 dark:text-dark-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
-                      +33 X XX XX XX XX
+                    <a href="tel:+33645480352" class="text-dark-600 dark:text-dark-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                      +33 6 45 48 03 52
                     </a>
                   </div>
                 </div>
