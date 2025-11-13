@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 
@@ -9,66 +9,86 @@ export function useQuoteExport() {
   /**
    * Exporte les devis au format Excel
    */
-  const exportToExcel = (quotes, filename = 'devis') => {
+  const exportToExcel = async (quotes, filename = 'devis') => {
     if (!quotes || quotes.length === 0) {
       return false
     }
 
-    // Préparer les données pour Excel
-    const data = quotes.map(quote => ({
-      'N° Devis': quote.quote_number || '',
-      'Client': quote.client?.user?.first_name && quote.client?.user?.last_name
-        ? `${quote.client.user.first_name} ${quote.client.user.last_name}`
-        : quote.client?.user?.email || 'N/A',
-      'Email': quote.client?.user?.email || 'N/A',
-      'Téléphone': quote.client?.phone || 'N/A',
-      'Type de projet': quote.project_type?.name || 'N/A',
-      'Catégorie': quote.main_category?.name || 'N/A',
-      'Sous-catégorie': quote.sub_category?.name || 'N/A',
-      'Montant HT': quote.total_price ? `${parseFloat(quote.total_price).toFixed(2)} €` : '0.00 €',
-      'TVA': quote.tax_amount ? `${parseFloat(quote.tax_amount).toFixed(2)} €` : '0.00 €',
-      'Remise': quote.discount_type === 'percent'
-        ? `${quote.discount_value || 0}%`
-        : quote.discount_type === 'fixed'
-        ? `${quote.discount_value || 0} €`
-        : 'N/A',
-      'Montant TTC': quote.total_price_with_tax ? `${parseFloat(quote.total_price_with_tax).toFixed(2)} €` : '0.00 €',
-      'Statut': getStatusLabel(quote.status),
-      'Date création': quote.created_at ? new Date(quote.created_at).toLocaleDateString('fr-FR') : 'N/A',
-      'Date envoi': quote.sent_date ? new Date(quote.sent_date).toLocaleDateString('fr-FR') : 'N/A',
-      'Date expiration': quote.expiry_date ? new Date(quote.expiry_date).toLocaleDateString('fr-FR') : 'N/A',
-      'Notes': quote.notes || ''
-    }))
+    // Créer le workbook avec ExcelJS
+    const workbook = new ExcelJS.Workbook()
+    workbook.creator = 'ZSDev'
+    workbook.created = new Date()
 
-    // Créer le workbook
-    const ws = XLSX.utils.json_to_sheet(data)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Devis')
+    const worksheet = workbook.addWorksheet('Devis')
 
-    // Ajuster la largeur des colonnes
-    const colWidths = [
-      { wch: 15 }, // N° Devis
-      { wch: 25 }, // Client
-      { wch: 30 }, // Email
-      { wch: 15 }, // Téléphone
-      { wch: 25 }, // Type de projet
-      { wch: 20 }, // Catégorie
-      { wch: 20 }, // Sous-catégorie
-      { wch: 12 }, // Montant HT
-      { wch: 12 }, // TVA
-      { wch: 12 }, // Remise
-      { wch: 12 }, // Montant TTC
-      { wch: 15 }, // Statut
-      { wch: 15 }, // Date création
-      { wch: 15 }, // Date envoi
-      { wch: 15 }, // Date expiration
-      { wch: 30 }  // Notes
+    // Définir les colonnes avec leurs largeurs
+    worksheet.columns = [
+      { header: 'N° Devis', key: 'quote_number', width: 15 },
+      { header: 'Client', key: 'client', width: 25 },
+      { header: 'Email', key: 'email', width: 30 },
+      { header: 'Téléphone', key: 'phone', width: 15 },
+      { header: 'Type de projet', key: 'project_type', width: 25 },
+      { header: 'Catégorie', key: 'main_category', width: 20 },
+      { header: 'Sous-catégorie', key: 'sub_category', width: 20 },
+      { header: 'Montant HT', key: 'total_price', width: 12 },
+      { header: 'TVA', key: 'tax_amount', width: 12 },
+      { header: 'Remise', key: 'discount', width: 12 },
+      { header: 'Montant TTC', key: 'total_price_with_tax', width: 12 },
+      { header: 'Statut', key: 'status', width: 15 },
+      { header: 'Date création', key: 'created_at', width: 15 },
+      { header: 'Date envoi', key: 'sent_date', width: 15 },
+      { header: 'Date expiration', key: 'expiry_date', width: 15 },
+      { header: 'Notes', key: 'notes', width: 30 }
     ]
-    ws['!cols'] = colWidths
 
-    // Télécharger le fichier
+    // Styliser l'en-tête
+    worksheet.getRow(1).font = { bold: true }
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF3b82f6' }
+    }
+    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+
+    // Ajouter les données
+    quotes.forEach(quote => {
+      worksheet.addRow({
+        quote_number: quote.quote_number || '',
+        client: quote.client?.user?.first_name && quote.client?.user?.last_name
+          ? `${quote.client.user.first_name} ${quote.client.user.last_name}`
+          : quote.client?.user?.email || 'N/A',
+        email: quote.client?.user?.email || 'N/A',
+        phone: quote.client?.phone || 'N/A',
+        project_type: quote.project_type?.name || 'N/A',
+        main_category: quote.main_category?.name || 'N/A',
+        sub_category: quote.sub_category?.name || 'N/A',
+        total_price: quote.total_price ? `${parseFloat(quote.total_price).toFixed(2)} €` : '0.00 €',
+        tax_amount: quote.tax_amount ? `${parseFloat(quote.tax_amount).toFixed(2)} €` : '0.00 €',
+        discount: quote.discount_type === 'percent'
+          ? `${quote.discount_value || 0}%`
+          : quote.discount_type === 'fixed'
+          ? `${quote.discount_value || 0} €`
+          : 'N/A',
+        total_price_with_tax: quote.total_price_with_tax ? `${parseFloat(quote.total_price_with_tax).toFixed(2)} €` : '0.00 €',
+        status: getStatusLabel(quote.status),
+        created_at: quote.created_at ? new Date(quote.created_at).toLocaleDateString('fr-FR') : 'N/A',
+        sent_date: quote.sent_date ? new Date(quote.sent_date).toLocaleDateString('fr-FR') : 'N/A',
+        expiry_date: quote.expiry_date ? new Date(quote.expiry_date).toLocaleDateString('fr-FR') : 'N/A',
+        notes: quote.notes || ''
+      })
+    })
+
+    // Générer et télécharger le fichier
     const timestamp = new Date().toISOString().split('T')[0]
-    XLSX.writeFile(wb, `${filename}_${timestamp}.xlsx`)
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${filename}_${timestamp}.xlsx`
+    link.click()
+    window.URL.revokeObjectURL(url)
+
     return true
   }
 
