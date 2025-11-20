@@ -31,11 +31,10 @@
     <!-- Form Content -->
     <section class="py-16">
       <div class="container mx-auto px-4 max-w-4xl">
-        <LoadingSpinner
-          v-if="loadingOptions"
-          message="Chargement..."
-          class="py-16"
-        />
+        <div v-if="loadingOptions" class="text-center py-16">
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <p class="mt-4 text-dark-600 dark:text-dark-300">Chargement...</p>
+        </div>
 
         <div v-else class="bg-white dark:bg-dark-800 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-dark-700">
           <!-- Étape 1 : Sélection de la catégorie -->
@@ -456,12 +455,11 @@ import {
   getSupplementaryOptions,
   createQuote
 } from '../api/quotes'
-import { LoadingSpinner } from '@/components/ui'
-import { useApi } from '@/composables/useApi'
+import { useToastStore } from '../stores/toast'
 import CategorySelector from '../components/CategorySelector.vue'
 
 const router = useRouter()
-const { callApi } = useApi()
+const toastStore = useToastStore()
 
 const currentStep = ref(1)
 const loadingOptions = ref(false)
@@ -498,29 +496,26 @@ const onCategorySelected = async (category) => {
 
 // Load options filtered by category
 const loadCategoryOptions = async (categorySlug) => {
-  loadingOptions.value = true
-
-  const response = await callApi(
-    () => Promise.all([
+  try {
+    loadingOptions.value = true
+    const [types, designs, levels, options] = await Promise.all([
       getProjectTypes(categorySlug),
       getDesignOptions(),
       getComplexityLevels(),
       getSupplementaryOptions(categorySlug)
-    ]),
-    {
-      errorMessage: 'Erreur lors du chargement des options'
-    }
-  )
+    ])
 
-  if (response) {
-    const [types, designs, levels, options] = response
     projectTypes.value = types.data.results || types.data
     designOptions.value = designs.data.results || designs.data
     complexityLevels.value = levels.data.results || levels.data
     supplementaryOptions.value = options.data.results || options.data
+  } catch (error) {
+    console.error('Erreur lors du chargement:', error)
+    errorMessage.value = 'Erreur lors du chargement des options'
+    toastStore.showToast('Erreur lors du chargement des options', 'error')
+  } finally {
+    loadingOptions.value = false
   }
-
-  loadingOptions.value = false
 }
 
 const canProceed = computed(() => {
@@ -608,29 +603,26 @@ const prevStep = () => {
 }
 
 const submitQuote = async () => {
-  submitting.value = true
-  errorMessage.value = ''
-  successMessage.value = ''
-
-  const response = await callApi(
-    () => createQuote(quote.value),
-    {
-      successMessage: 'Devis créé et envoyé par email avec succès !',
-      errorMessage: "Erreur lors de l'envoi du devis. Veuillez réessayer."
-    }
-  )
-
-  submitting.value = false
-
-  if (response) {
+  try {
+    submitting.value = true
+    errorMessage.value = ''
+    successMessage.value = ''
+    
+    const response = await createQuote(quote.value)
+    
     successMessage.value = `Votre devis ${response.data.quote_number} a été créé avec succès ! Un email de confirmation a été envoyé à ${quote.value.client_email}.`
+    toastStore.showToast('Devis créé et envoyé par email avec succès !', 'success')
 
     // Rediriger vers la page de mes devis après 2 secondes
     setTimeout(() => {
       router.push('/mes-devis')
     }, 2000)
-  } else {
-    errorMessage.value = "Erreur lors de l'envoi du devis. Veuillez réessayer."
+  } catch (error) {
+    errorMessage.value = error.response?.data?.error || "Erreur lors de l'envoi du devis. Veuillez réessayer."
+    toastStore.showToast(errorMessage.value, 'error')
+    console.error('Erreur:', error)
+  } finally {
+    submitting.value = false
   }
 }
 </script>

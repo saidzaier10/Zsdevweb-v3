@@ -2,10 +2,10 @@
   <div class="min-h-screen bg-gray-50 dark:bg-dark-900 py-12 transition-colors duration-200">
     <div class="container mx-auto px-4 lg:px-8 max-w-4xl">
       <!-- Chargement -->
-      <LoadingSpinner
-        v-if="loading"
-        message="Chargement du devis..."
-      />
+      <div v-if="loading" class="text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <p class="mt-4 text-dark-600 dark:text-dark-300">Chargement du devis...</p>
+      </div>
 
       <!-- Erreur -->
       <div v-else-if="error" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 text-center">
@@ -210,15 +210,15 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getQuoteByToken, signQuote, rejectQuote as rejectQuoteAPI } from '../api/quotes'
-import { LoadingSpinner } from '@/components/ui'
-import { formatDate } from '@/utils/formatters'
-import { useApi } from '@/composables/useApi'
+import { useToastStore } from '../stores/toast'
 
 const route = useRoute()
 const router = useRouter()
-const { loading, error, callApi } = useApi()
+const toastStore = useToastStore()
 
 const quote = ref(null)
+const loading = ref(true)
+const error = ref(null)
 const submitting = ref(false)
 
 const signatureName = ref('')
@@ -232,6 +232,17 @@ const canSubmit = computed(() => {
 })
 
 const hasSignature = ref(false)
+
+const formatDate = (dateString) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
 
 const initCanvas = () => {
   nextTick(() => {
@@ -305,64 +316,66 @@ const clearSignature = () => {
 const submitSignature = async () => {
   if (!canSubmit.value) return
 
-  submitting.value = true
-  const signatureData = signatureCanvas.value.toDataURL('image/png')
+  try {
+    submitting.value = true
+    const signatureData = signatureCanvas.value.toDataURL('image/png')
 
-  const response = await callApi(
-    () => signQuote(route.params.token, {
+    await signQuote(route.params.token, {
       signer_name: signatureName.value,
       signature: signatureData,
       terms_accepted: acceptTerms.value
-    }),
-    {
-      successMessage: 'Devis signé avec succès !',
-      errorMessage: 'Erreur lors de la signature du devis'
-    }
-  )
+    })
 
-  submitting.value = false
+    toastStore.showToast('Devis signé avec succès !', 'success')
 
-  if (response) {
     // Rediriger vers une page de confirmation
     setTimeout(() => {
       router.push('/')
     }, 2000)
+  } catch (err) {
+    console.error('Erreur lors de la signature:', err)
+    toastStore.showToast(
+      err.response?.data?.error || 'Erreur lors de la signature du devis',
+      'error'
+    )
+  } finally {
+    submitting.value = false
   }
 }
 
 const rejectQuote = async () => {
   if (!confirm('Êtes-vous sûr de vouloir refuser ce devis ?')) return
-  if (!quote.value) return
 
-  submitting.value = true
-
-  const response = await callApi(
-    () => rejectQuoteAPI(quote.value.id),
-    {
-      successMessage: 'Devis refusé',
-      errorMessage: 'Erreur lors du refus du devis'
+  try {
+    submitting.value = true
+    if (!quote.value) {
+      throw new Error('Quote introuvable')
     }
-  )
 
-  submitting.value = false
+    await rejectQuoteAPI(quote.value.id)
+    toastStore.showToast('Devis refusé', 'info')
 
-  if (response) {
     setTimeout(() => {
       router.push('/')
     }, 2000)
+  } catch (err) {
+    console.error('Erreur lors du refus:', err)
+    toastStore.showToast('Erreur lors du refus du devis', 'error')
+  } finally {
+    submitting.value = false
   }
 }
 
 const loadQuote = async () => {
-  const response = await callApi(
-    () => getQuoteByToken(route.params.token),
-    {
-      errorMessage: 'Lien invalide ou expiré'
-    }
-  )
-
-  if (response) {
+  try {
+    loading.value = true
+    const response = await getQuoteByToken(route.params.token)
     quote.value = response.data
+  } catch (err) {
+    console.error('Erreur lors du chargement du devis:', err)
+    error.value = err.response?.data?.error || 'Lien invalide ou expiré'
+  } finally {
+    loading.value = false
   }
 }
 

@@ -1,21 +1,15 @@
 """
-API Views pour les devis - Version complète avec emails
+API Views pour les devis - Version refactorisée avec services
 """
-import base64
-import binascii
-import uuid
-
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Count, Sum, Avg, Q
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from datetime import timedelta
-from django.core.files.base import ContentFile
 
 from .models import (
     Company,
@@ -42,12 +36,8 @@ from .serializers import (
     QuoteEmailLogSerializer,
     QuoteStatisticsSerializer
 )
-from .pdf_generator_weasy import QuotePDFGeneratorWeasy
-from .emails import (
-    send_quote_created_email,
-    send_quote_accepted_email,
-    send_quote_rejected_email
-)
+from .services import QuoteService, PDFService
+from .utils import QuoteStatus, handle_service_errors
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
@@ -218,41 +208,14 @@ class QuoteViewSet(viewsets.ModelViewSet):
         return queryset.none()
     
     def create(self, request, *args, **kwargs):
-        """Créer un devis, générer le PDF et envoyer l'email"""
+        """Créer un devis avec génération PDF et envoi email"""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         quote = serializer.save()
 
-        # Générer le PDF automatiquement avec WeasyPrint
-        try:
-            from django.core.files.base import ContentFile
-
-            generator = QuotePDFGeneratorWeasy(quote)
-            pdf_buffer = generator.generate()
-            pdf_content = pdf_buffer.getvalue()
-
-            # Sauvegarder le PDF dans le modèle
-            quote.pdf_file.save(
-                f'devis_{quote.quote_number}.pdf',
-                ContentFile(pdf_content),
-                save=True
-            )
-            print(f"✅ PDF généré avec succès (WeasyPrint): devis_{quote.quote_number}.pdf")
-        except Exception as e:
-            print(f"❌ Erreur génération PDF (WeasyPrint): {e}")
-            import traceback
-            traceback.print_exc()
-            # On continue même si la génération du PDF échoue
-
-        # Envoyer l'email de création avec le PDF en pièce jointe
-        try:
-            send_quote_created_email(quote)
-            quote.status = 'sent'
-            quote.sent_at = timezone.now()
-            quote.save(update_fields=['status', 'sent_at'])
-        except Exception as e:
-            print(f"Erreur envoi email: {e}")
+        # Utiliser le service pour créer le devis complet (PDF + email)
+        QuoteService.create_quote(quote)
 
         detail_serializer = QuoteDetailSerializer(quote, context={'request': request})
 
@@ -300,164 +263,77 @@ class QuoteViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     @action(detail=True, methods=['get'], url_path='download-pdf')
+    @handle_service_errors
     def download_pdf(self, request, pk=None):
         """Télécharger le PDF du devis"""
         quote = self.get_object()
-
-        generator = QuotePDFGeneratorWeasy(quote)
-        pdf_buffer = generator.generate()
-
-        from django.core.files.base import ContentFile
-        pdf_content = pdf_buffer.getvalue()
-        quote.pdf_file.save(
-            f'devis_{quote.quote_number}.pdf',
-            ContentFile(pdf_content),
-            save=True
-        )
-        
-        response = HttpResponse(pdf_content, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="devis_{quote.quote_number}.pdf"'
-        return response
+        return PDFService.generate_pdf_response(quote)
     
     @action(detail=True, methods=['post'], url_path='send-email')
+    @handle_service_errors
     def send_email(self, request, pk=None):
         """Envoyer le devis par email"""
         quote = self.get_object()
-        
-        try:
-            send_quote_created_email(quote)
-            quote.status = 'sent'
-            quote.sent_at = timezone.now()
-            quote.save(update_fields=['status', 'sent_at'])
-            
-            return Response({
-                'message': 'Email envoyé avec succès',
-                'sent_at': quote.sent_at
-            })
-        except Exception as e:
-            return Response(
-                {'error': f'Erreur lors de l\'envoi: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        result = QuoteService.send_quote(quote)
+
+        return Response({
+            'message': result['message'],
+            'sent_at': quote.sent_at
+        })
     
     @action(detail=False, methods=['get'], url_path='public/(?P<token>[^/.]+)', permission_classes=[permissions.AllowAny])
     def public_view(self, request, token=None):
         """Voir un devis avec le token public (sans authentification)"""
         quote = get_object_or_404(Quote, signature_token=token)
-        
-        if not quote.viewed_at:
-            quote.viewed_at = timezone.now()
-            if quote.status == 'sent':
-                quote.status = 'viewed'
-            quote.save()
-        
+
+        # Marquer comme consulté via le service
+        QuoteService.mark_as_viewed(quote)
+
         serializer = QuoteDetailSerializer(quote, context={'request': request})
         return Response(serializer.data)
     
     @action(detail=False, methods=['post'], url_path='sign/(?P<token>[^/.]+)', permission_classes=[permissions.AllowAny])
+    @handle_service_errors
     def sign_quote(self, request, token=None):
         """Signer électroniquement un devis"""
         quote = get_object_or_404(Quote, signature_token=token)
-        
-        if quote.signed_at:
-            return Response(
-                {'error': 'Ce devis a déjà été signé'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        if quote.is_expired:
-            return Response(
-                {'error': 'Ce devis a expiré'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        signature_data = request.data.get('signature') or request.data.get('signature_data')
-        signer_name = request.data.get('signer_name') or request.data.get('signature_name')
-        terms_accepted = request.data.get('terms_accepted', False)
 
-        if isinstance(terms_accepted, str):
-            terms_accepted = terms_accepted.lower() in ('true', '1', 'yes', 'on')
+        # Normaliser les données de signature
+        signature_data = {
+            'signature': request.data.get('signature') or request.data.get('signature_data'),
+            'signer_name': request.data.get('signer_name') or request.data.get('signature_name'),
+            'terms_accepted': request.data.get('terms_accepted', False)
+        }
+
+        # Normaliser terms_accepted en booléen
+        if isinstance(signature_data['terms_accepted'], str):
+            signature_data['terms_accepted'] = signature_data['terms_accepted'].lower() in ('true', '1', 'yes', 'on')
         else:
-            terms_accepted = bool(terms_accepted)
-        
-        if not signature_data or not signer_name or not terms_accepted:
-            return Response(
-                {'error': 'Données de signature incomplètes'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            signature_data['terms_accepted'] = bool(signature_data['terms_accepted'])
 
-        # Décoder l'image base64 et l'enregistrer correctement dans le FileField
-        try:
-            if ';base64,' in signature_data:
-                header, encoded = signature_data.split(';base64,', 1)
-                file_ext = header.split('/')[-1].lower()
-            else:
-                encoded = signature_data
-                file_ext = 'png'
+        # Utiliser le service pour traiter la signature
+        result = QuoteService.sign_quote(quote, signature_data, request)
 
-            decoded_image = base64.b64decode(encoded)
-        except (ValueError, TypeError, binascii.Error):
-            return Response(
-                {'error': 'Signature invalide'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        allowed_ext = {'png', 'jpg', 'jpeg', 'webp'}
-        file_ext = file_ext if file_ext in allowed_ext else 'png'
-        signature_filename = f"signature_{quote.quote_number or quote.id}_{uuid.uuid4().hex[:8]}.{file_ext}"
-
-        quote.signature_image.save(
-            signature_filename,
-            ContentFile(decoded_image),
-            save=False
-        )
-        quote.signer_name = signer_name
-        quote.signed_at = timezone.now()
-        quote.accepted_at = timezone.now()
-        quote.status = 'accepted'
-        
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            quote.client_ip = x_forwarded_for.split(',')[0]
-        else:
-            quote.client_ip = request.META.get('REMOTE_ADDR')
-        
-        quote.save()
-        
-        try:
-            send_quote_accepted_email(quote)
-        except Exception as e:
-            print(f"Erreur envoi email acceptation: {e}")
-        
         serializer = QuoteDetailSerializer(quote, context={'request': request})
         return Response({
-            'message': 'Devis signé avec succès',
+            'message': result['message'],
             'quote': serializer.data
         })
     
     @action(detail=True, methods=['post'], url_path='reject')
+    @handle_service_errors
     def reject(self, request, pk=None):
         """Rejeter un devis"""
         quote = self.get_object()
-        
-        if quote.status == 'accepted':
-            return Response(
-                {'error': 'Un devis accepté ne peut pas être rejeté'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        rejection_reason = request.data.get('reason', '')
-        
-        quote.status = 'rejected'
-        quote.rejection_reason = rejection_reason
-        quote.rejected_at = timezone.now()
-        quote.save()
-        
-        try:
-            send_quote_rejected_email(quote)
-        except Exception as e:
-            print(f"Erreur envoi email refus: {e}")
-        
+
+        # Préparer les données de refus
+        rejection_data = {
+            'rejection_reason': request.data.get('reason', '')
+        }
+
+        # Utiliser le service pour rejeter le devis
+        QuoteService.reject_quote(quote, rejection_data)
+
         serializer = QuoteDetailSerializer(quote, context={'request': request})
         return Response(serializer.data)
     
@@ -510,36 +386,14 @@ class QuoteViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'], url_path='duplicate')
+    @handle_service_errors
     def duplicate(self, request, pk=None):
         """Dupliquer un devis"""
         original_quote = self.get_object()
-        
-        new_quote = Quote.objects.create(
-            client_name=original_quote.client_name,
-            client_email=original_quote.client_email,
-            client_phone=original_quote.client_phone,
-            company_name=original_quote.company_name,
-            client_address=original_quote.client_address,
-            project_type=original_quote.project_type,
-            design_option=original_quote.design_option,
-            complexity_level=original_quote.complexity_level,
-            project_description=original_quote.project_description,
-            deadline=original_quote.deadline,
-            discount_type=original_quote.discount_type,
-            discount_value=original_quote.discount_value,
-            discount_reason=original_quote.discount_reason,
-            tva_rate=original_quote.tva_rate,
-            estimated_start_date=original_quote.estimated_start_date,
-            status='draft'
-        )
-        
-        new_quote.supplementary_options.set(original_quote.supplementary_options.all())
-        
-        prices = new_quote.calculate_prices(skip_m2m=False)
-        for field, value in prices.items():
-            setattr(new_quote, field, value)
-        new_quote.save()
-        
+
+        # Utiliser le service pour dupliquer le devis
+        new_quote = QuoteService.duplicate_quote(original_quote, request.user)
+
         serializer = QuoteDetailSerializer(new_quote, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
