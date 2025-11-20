@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs'
 import jsPDF from 'jspdf'
-import 'jspdf-autotable'
+import autoTable from 'jspdf-autotable'
 
 /**
  * Composable pour exporter les devis en Excel et PDF

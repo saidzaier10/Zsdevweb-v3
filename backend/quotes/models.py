@@ -82,7 +82,7 @@ class ProjectType(models.Model):
     )
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField()
-    base_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    base_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0'))])
     estimated_days = models.IntegerField(default=10, help_text="Nombre de jours estimés")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -101,7 +101,7 @@ class DesignOption(models.Model):
     """Options de design (Simple, Moderne, Premium)"""
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField()
-    price_supplement = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    price_supplement = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0'))])
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -119,7 +119,7 @@ class ComplexityLevel(models.Model):
     """Niveaux de complexité (Basique, Intermédiaire, Avancé)"""
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField()
-    price_multiplier = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(1)])
+    price_multiplier = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(Decimal('1'))])
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -143,7 +143,7 @@ class SupplementaryOption(models.Model):
 
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0'))])
     billing_type = models.CharField(max_length=20, choices=BILLING_TYPE_CHOICES, default='one_time')
 
     # Filtrage intelligent par catégorie
@@ -243,9 +243,9 @@ class Quote(models.Model):
 
     # Calculs financiers
     subtotal_ht = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        validators=[MinValueValidator(0)],
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0'))],
         verbose_name="Sous-total HT",
         default=0
     )
@@ -261,7 +261,7 @@ class Quote(models.Model):
         max_digits=10,
         decimal_places=2,
         default=0,
-        validators=[MinValueValidator(0)],
+        validators=[MinValueValidator(Decimal('0'))],
         verbose_name="Valeur de la remise"
     )
     discount_reason = models.CharField(
@@ -278,23 +278,23 @@ class Quote(models.Model):
     )
     
     tva_rate = models.DecimalField(
-        max_digits=5, 
-        decimal_places=2, 
+        max_digits=5,
+        decimal_places=2,
         default=Decimal('20.00'),
-        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('100'))],
         verbose_name="Taux TVA (%)"
     )
     tva_amount = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        validators=[MinValueValidator(0)],
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0'))],
         verbose_name="Montant TVA",
         default=0
     )
     total_ttc = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        validators=[MinValueValidator(0)],
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0'))],
         verbose_name="Total TTC",
         default=0
     )

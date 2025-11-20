@@ -9,7 +9,7 @@ import { useApi } from '@/composables/useApi'
 import { SUCCESS_MESSAGES } from '@/utils/constants'
 
 export function useQuoteAdmin() {
-  const { loading, get, callApi, handleSuccess, handleError } = useApi()
+  const { loading, get, callApi, handleSuccess, handleError } = useApi() || {}
 
   const quotes = ref([])
   const statistics = ref(null)

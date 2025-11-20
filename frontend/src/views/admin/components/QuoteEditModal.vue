@@ -1,6 +1,6 @@
 <template>
   <Modal
-    :show="show"
+    :modelValue="show"
     :title="modalTitle"
     size="lg"
     @close="handleClose"

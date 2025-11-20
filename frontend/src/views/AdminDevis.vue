@@ -82,7 +82,7 @@
         :start-index="startIndex"
         :end-index="endIndex"
         :total="filteredQuotes.length"
-        @toggle-selection="toggleSelection"
+        @toggle-selection="toggleQuoteSelection"
         @toggle-select-all="toggleSelectAll"
         @edit="openEditModal"
         @send="handleSendQuote"
@@ -95,7 +95,7 @@
       <EmptyState
         v-else
         title="Aucun devis trouvé"
-        description="Aucun devis ne correspond à vos critères de recherche."
+        message="Aucun devis ne correspond à vos critères de recherche."
         icon="document"
       />
     </div>
@@ -167,7 +167,7 @@ const {
 const {
   selectedQuotes,
   isAllSelected,
-  toggleSelection,
+  toggleQuoteSelection,
   toggleSelectAll,
   clearSelection
 } = useQuoteSelection(paginatedQuotes)
@@ -175,7 +175,7 @@ const {
 const {
   handleExportExcel: exportExcel,
   handleExportPDF: exportPDF
-} = useQuoteExport()
+} = useQuoteExport() || {}
 
 // Modal states
 const showEditModal = ref(false)

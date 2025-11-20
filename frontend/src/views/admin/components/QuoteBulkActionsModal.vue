@@ -1,6 +1,6 @@
 <template>
   <Modal
-    :show="show"
+    :modelValue="show"
     :title="`Actions groupées (${selectedCount} sélectionné${selectedCount > 1 ? 's' : ''})`"
     size="md"
     @close="handleClose"

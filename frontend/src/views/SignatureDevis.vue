@@ -216,7 +216,7 @@ import { useApi } from '@/composables/useApi'
 
 const route = useRoute()
 const router = useRouter()
-const { loading, error, callApi } = useApi()
+const { loading, error, callApi } = useApi() || {}
 
 const quote = ref(null)
 const submitting = ref(false)

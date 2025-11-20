@@ -159,7 +159,7 @@
 import { Card, Button, StatusBadge } from '@/components/ui'
 import { formatAmount, formatShortDate } from '@/utils/formatters'
 
-defineProps({
+const props = defineProps({
   quotes: {
     type: Array,
     required: true
@@ -205,6 +205,6 @@ defineProps({
 defineEmits(['toggle-selection', 'toggle-select-all', 'edit', 'send', 'download', 'previous-page', 'next-page'])
 
 const isSelected = (quoteId) => {
-  return defineProps().selectedQuotes.includes(quoteId)
+  return props.selectedQuotes.includes(quoteId)
 }
 </script>

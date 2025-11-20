@@ -461,7 +461,7 @@ import { useApi } from '@/composables/useApi'
 import CategorySelector from '../components/CategorySelector.vue'
 
 const router = useRouter()
-const { callApi } = useApi()
+const { callApi } = useApi() || {}
 
 const currentStep = ref(1)
 const loadingOptions = ref(false)

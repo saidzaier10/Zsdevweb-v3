@@ -172,7 +172,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue' // À créer
 const router = useRouter()
 
 // ✅ AMÉLIORATION 1: Utiliser useApi au lieu de gérer loading/errors manuellement
-const { loading, get, callApi, handleSuccess, handleError } = useApi()
+const { loading, get, callApi, handleSuccess, handleError } = useApi() || {}
 
 const quotes = ref([])
 const filterStatus = ref(null)
@@ -231,7 +231,7 @@ const getProgressPercentage = (quote) => {
 }
 
 const openQuoteDetails = (quote) => {
-  selectedQuote.value = quote
+  router.push(`/devis/${quote.id}`)
 }
 
 const closeQuoteDetails = () => {

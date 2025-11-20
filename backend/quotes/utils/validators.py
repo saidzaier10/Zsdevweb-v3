@@ -102,7 +102,7 @@ class QuoteValidator:
             return False, ErrorMessages.QUOTE_ALREADY_SIGNED
 
         # Vérifier si expiré
-        if quote.is_expired():
+        if quote.is_expired:
             return False, ErrorMessages.QUOTE_EXPIRED
 
         # Vérifier le statut
@@ -144,7 +144,7 @@ class QuoteValidator:
         if quote.status not in QuoteStatus.RESENDABLE_STATUSES:
             return False, f"Le statut actuel ({quote.get_status_display()}) ne permet pas le renvoi"
 
-        if quote.is_expired():
+        if quote.is_expired:
             return False, ErrorMessages.QUOTE_EXPIRED
 
         return True, None

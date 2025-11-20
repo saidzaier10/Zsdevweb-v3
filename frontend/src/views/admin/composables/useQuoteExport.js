@@ -7,8 +7,8 @@ import { useQuoteExport as useQuoteExportOriginal } from '@/composables/useQuote
 import { useErrorHandler } from '@/composables/useErrorHandler'
 
 export function useQuoteExport() {
-  const { exportToExcel, exportToPDF } = useQuoteExportOriginal()
-  const { handleSuccess, handleWarning } = useErrorHandler()
+  const { exportToExcel, exportToPDF } = useQuoteExportOriginal() || {}
+  const { handleSuccess, handleWarning } = useErrorHandler() || {}
 
   /**
    * Exporte les devis en Excel
