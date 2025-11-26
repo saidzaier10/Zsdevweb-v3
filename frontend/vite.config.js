@@ -16,6 +16,7 @@ export default defineConfig({
     host: '0.0.0.0',  // Écoute sur toutes les interfaces
     port: 5173,
     strictPort: true,
+    allowedHosts: ['frontend', 'localhost', '127.0.0.1'],
     watch: {
       usePolling: true  // Nécessaire pour Docker
     }

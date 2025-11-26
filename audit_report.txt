@@ -1,0 +1,47 @@
+# Audit de Sécurité et de Configuration - Zsdevweb v3
+**Date:** 25 Novembre 2025
+**Statut:** ✅ Validé
+
+## 1. Résumé Exécutif
+L'application a fait l'objet d'une mise à jour majeure pour renforcer la sécurité, améliorer la résilience réseau et affiner l'expérience visuelle. Les vulnérabilités critiques identifiées précédemment ont été corrigées.
+
+## 2. Sécurité (Backend)
+
+### ✅ WAF (Web Application Firewall)
+- **Amélioration** : Le middleware de sécurité (`SecurityMiddleware`) a été rendu plus intelligent.
+- **Liste Blanche** : Les chemins critiques comme `/admin/`, `/static/` et `/media/` sont désormais exclus des vérifications agressives pour éviter les faux positifs.
+- **Mode Observation** : Un mode "non-bloquant" a été ajouté (via `WAF_BLOCK_MODE`), permettant de logger les attaques potentielles sans impacter les utilisateurs légitimes en cas de doute.
+
+### ✅ Configuration Docker
+- **Redis** : Le service Redis est configuré pour exiger un mot de passe (`--requirepass`), ce qui sécurise le cache contre les accès non autorisés si le port venait à être exposé.
+- **Base de Données** : PostgreSQL utilise des volumes persistants et des secrets d'environnement.
+
+## 3. Configuration Frontend & Réseau
+
+### ✅ Résolution Dynamique d'URL
+- **Problème Résolu** : L'URL de l'API n'est plus codée en dur sur `localhost`.
+- **Solution** : Le fichier `axios.js` priorise désormais la variable d'environnement `VITE_API_URL`. Si elle est absente, il détecte automatiquement le nom d'hôte (ex: `192.168.1.x` ou nom de domaine) et y ajoute le port `8000`.
+- **Bénéfice** : L'application est maintenant accessible depuis n'importe quel appareil sur le même réseau (mobile, tablette) sans reconfiguration.
+
+### ✅ Gestion des Sessions
+- **Refresh Token** : Le mécanisme de rafraîchissement automatique du token JWT est implémenté. Les utilisateurs ne seront plus déconnectés brutalement à l'expiration du token d'accès (durée de vie courte), tant que leur session globale (refresh token) est valide.
+
+## 4. Expérience Utilisateur & Visuel
+
+### ✅ Architecture Visuelle (Layering)
+Une structure en couches (Z-Index) stricte a été mise en place pour garantir la lisibilité et l'esthétique :
+1.  **Niveau 0 (Fond)** : Couleurs des sections (Blanc/Sombre) pour le respect de la charte graphique.
+2.  **Niveau 10 (Animation)** : Particules et connexions flottant par-dessus les couleurs de fond.
+3.  **Niveau 20 (Contenu)** : Textes, boutons et cartes interactives au premier plan, garantissant une accessibilité totale.
+
+### ✅ Accessibilité & Performance
+- **Contraste** : L'animation a été renforcée (traits plus épais, particules plus opaques) pour être visible sur tous les fonds.
+- **Thème** : Les lignes de connexion s'adaptent automatiquement (Noires sur fond blanc, Blanches sur fond sombre).
+- **Performance** : L'animation se met en pause lorsque l'onglet n'est pas actif et réduit sa densité sur mobile.
+
+## 5. Conclusion
+L'application Zsdevweb v3 est désormais dans un état **stable, sécurisé et optimisé**. Les recommandations de l'audit précédent ont été traitées avec succès.
+
+### Dernières Recommandations
+- **Production** : Assurez-vous que la variable `REDIS_PASSWORD` est bien définie et complexe dans votre fichier `.env` de production.
+- **Monitoring** : Surveillez les logs du WAF en mode "Observation" pendant quelques jours avant de le passer en mode bloquant strict si ce n'est pas déjà fait.
