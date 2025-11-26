@@ -55,11 +55,12 @@ class SecurityMiddleware:
 
     def __init__(self, get_response):
         self.get_response = get_response
-        # Mode "Observation" : si True, on loggue mais on ne bloque pas
-        self.block_mode = settings.WAF_BLOCK_MODE if hasattr(settings, 'WAF_BLOCK_MODE') else True
 
     def __call__(self, request):
         # Vérifications avant le traitement de la requête
+        
+        # Mode "Observation" : si True, on loggue mais on ne bloque pas
+        block_mode = getattr(settings, 'WAF_BLOCK_MODE', True)
         
         # 0. Ignorer les chemins whitelistés
         for path in self.WHITELISTED_PATHS:
@@ -69,7 +70,7 @@ class SecurityMiddleware:
         # 1. Vérifier la taille de la requête
         if self.is_request_too_large(request):
             logger.warning(f"Requête trop volumineuse détectée depuis {self.get_client_ip(request)}")
-            if self.block_mode:
+            if block_mode:
                 return JsonResponse(
                     {'error': 'Requête trop volumineuse'},
                     status=413
@@ -78,7 +79,7 @@ class SecurityMiddleware:
         # 2. Vérifier le User-Agent (uniquement en production)
         if not settings.DEBUG and self.is_suspicious_user_agent(request):
             logger.warning(f"User-Agent suspect détecté: {request.META.get('HTTP_USER_AGENT')} depuis {self.get_client_ip(request)}")
-            if self.block_mode:
+            if block_mode:
                 return JsonResponse(
                     {'error': 'Accès refusé'},
                     status=403
@@ -87,7 +88,7 @@ class SecurityMiddleware:
         # 3. Détecter les tentatives d'injection SQL/XSS dans l'URL
         if self.contains_malicious_patterns(request.path) or self.contains_malicious_patterns(request.GET.urlencode()):
             logger.error(f"Tentative d'attaque détectée dans l'URL: {request.path} depuis {self.get_client_ip(request)}")
-            if self.block_mode:
+            if block_mode:
                 return JsonResponse(
                     {'error': 'Requête invalide'},
                     status=400
@@ -100,7 +101,7 @@ class SecurityMiddleware:
                     body_str = request.body.decode('utf-8', errors='ignore')
                     if self.contains_malicious_patterns(body_str):
                         logger.error(f"Tentative d'attaque détectée dans le body depuis {self.get_client_ip(request)}")
-                        if self.block_mode:
+                        if block_mode:
                             return JsonResponse(
                                 {'error': 'Contenu de la requête invalide'},
                                 status=400

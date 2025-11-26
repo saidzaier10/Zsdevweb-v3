@@ -13,6 +13,7 @@ from .serializers import (
     TestimonialSerializer, ContactMessageSerializer
 )
 from .services import get_portfolio_statistics
+from .permissions import IsAdminOrReadOnly
 
 
 @method_decorator(cache_page(60 * 15), name='dispatch')  # Cache 15 minutes
@@ -28,9 +29,10 @@ class TechnologyViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @method_decorator(cache_page(60 * 10), name='dispatch')  # Cache 10 minutes
-class ProjectViewSet(viewsets.ReadOnlyModelViewSet):
+class ProjectViewSet(viewsets.ModelViewSet):
     """API endpoint pour les projets - optimisé avec prefetch_related et cache"""
     queryset = Project.objects.filter(is_published=True).prefetch_related('technologies')
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['featured']
     search_fields = ['title', 'description']

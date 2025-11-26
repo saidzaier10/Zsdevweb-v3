@@ -139,7 +139,7 @@ class SupplementaryOptionViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset.prefetch_related('compatible_categories')
 
 
-class QuoteTemplateViewSet(viewsets.ReadOnlyModelViewSet):
+class QuoteTemplateViewSet(viewsets.ModelViewSet):
     """API pour récupérer les templates de devis"""
     queryset = QuoteTemplate.objects.filter(is_active=True)
     serializer_class = QuoteTemplateSerializer
@@ -179,11 +179,11 @@ class QuoteViewSet(viewsets.ModelViewSet):
         """Permissions par action"""
         if self.action == 'create':
             return [permissions.AllowAny()]
-        elif self.action in ['list', 'update', 'partial_update', 'destroy']:
-            return [permissions.IsAdminUser()]
-        elif self.action == 'retrieve':
+        elif self.action in ['list', 'retrieve']:
             # Utilisateurs authentifiés peuvent voir leurs propres devis
             return [permissions.IsAuthenticated()]
+        elif self.action in ['update', 'partial_update', 'destroy']:
+            return [permissions.IsAdminUser()]
         return [permissions.AllowAny()]
     
     def get_queryset(self):

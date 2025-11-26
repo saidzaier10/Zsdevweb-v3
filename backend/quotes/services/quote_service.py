@@ -239,24 +239,21 @@ class QuoteService:
             client_email=quote.client_email,
             client_phone=quote.client_phone,
             client_address=quote.client_address,
-            project_name=quote.project_name,
+            # project_name removed as it is not a field on Quote
             project_description=quote.project_description,
-            project_category=quote.project_category,
+            # project_category removed as it is not a field on Quote
             project_type=quote.project_type,
             design_option=quote.design_option,
             complexity_level=quote.complexity_level,
-            base_price=quote.base_price,
-            design_option_price=quote.design_option_price,
-            complexity_price=quote.complexity_price,
+            # base_price, design_option_price, complexity_price removed as they are not fields
             discount_type=quote.discount_type,
             discount_value=quote.discount_value,
             discount_reason=quote.discount_reason,
             tva_rate=quote.tva_rate,
-            project_duration_weeks=quote.project_duration_weeks,
-            first_payment_percent=quote.first_payment_percent,
-            second_payment_percent=quote.second_payment_percent,
-            final_payment_percent=quote.final_payment_percent,
-            notes=quote.notes,
+            # project_duration_weeks removed, mapped to estimated_duration_days
+            estimated_duration_days=quote.estimated_duration_days,
+            # payment percents removed as they are not fields
+            internal_notes=quote.internal_notes,
             status=QuoteStatus.DRAFT,
         )
 

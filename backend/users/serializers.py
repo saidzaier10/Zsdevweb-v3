@@ -1,4 +1,4 @@
-from rest_framework import serializers
+from rest_framework import serializers, validators
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.validators import EmailValidator, RegexValidator
@@ -49,7 +49,8 @@ class RegisterSerializer(serializers.ModelSerializer):
                     RegexValidator(
                         regex=r'^[\w.@+-]+$',
                         message="Le nom d'utilisateur ne peut contenir que des lettres, chiffres et @/./+/-/_"
-                    )
+                    ),
+                    validators.UniqueValidator(queryset=User.objects.all(), message="Ce nom d'utilisateur est déjà pris.")
                 ]
             },
             'company_name': {
@@ -171,8 +172,8 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'phone', 'company_name', 'user_type', 'avatar', 'created_at', 'is_staff', 'is_superuser']
-        read_only_fields = ['id', 'user_type', 'created_at']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone', 'company_name', 'user_type', 'avatar', 'created_at', 'is_staff', 'is_superuser']
+        read_only_fields = ['id', 'username', 'user_type', 'created_at']
     
     def validate_phone(self, value):
         """Validation du téléphone lors de la mise à jour"""

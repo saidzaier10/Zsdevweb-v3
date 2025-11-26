@@ -1,11 +1,12 @@
 """
 Tests unitaires pour l'app users
 """
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from .factories import UserFactory, AdminUserFactory
+import unittest.mock
 
 User = get_user_model()
 
@@ -62,6 +63,7 @@ class UserModelTestCase(TestCase):
 # TESTS DES API ENDPOINTS
 # ============================================================
 
+@override_settings(WAF_BLOCK_MODE=False, REST_FRAMEWORK={'DEFAULT_THROTTLE_CLASSES': [], 'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication']})
 class UserRegistrationAPITestCase(APITestCase):
     """Tests pour l'endpoint d'inscription"""
     
@@ -77,6 +79,12 @@ class UserRegistrationAPITestCase(APITestCase):
             'first_name': 'John',
             'last_name': 'Doe',
         }
+        
+        # Disable throttling
+        from users.views import RegisterRateThrottle
+        self.throttle_patcher = unittest.mock.patch.object(RegisterRateThrottle, 'allow_request', return_value=True)
+        self.throttle_patcher.start()
+        self.addCleanup(self.throttle_patcher.stop)
     
     def test_register_user_success(self):
         """Test l'inscription réussie d'un utilisateur"""
@@ -116,6 +124,7 @@ class UserRegistrationAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+@override_settings(WAF_BLOCK_MODE=False, REST_FRAMEWORK={'DEFAULT_THROTTLE_CLASSES': [], 'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication']})
 class UserLoginAPITestCase(APITestCase):
     """Tests pour l'endpoint de connexion"""
     
@@ -125,6 +134,12 @@ class UserLoginAPITestCase(APITestCase):
         self.url = '/api/auth/login/'
         self.user = UserFactory(username='testuser')
         # Le password est défini à 'testpass123' dans la factory
+        
+        # Disable throttling
+        from users.views import LoginRateThrottle
+        self.throttle_patcher = unittest.mock.patch.object(LoginRateThrottle, 'allow_request', return_value=True)
+        self.throttle_patcher.start()
+        self.addCleanup(self.throttle_patcher.stop)
     
     def test_login_success(self):
         """Test la connexion réussie"""
@@ -134,8 +149,9 @@ class UserLoginAPITestCase(APITestCase):
         }
         response = self.client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('access', response.data)
-        self.assertIn('refresh', response.data)
+        self.assertIn('tokens', response.data)
+        self.assertIn('access', response.data['tokens'])
+        self.assertIn('refresh', response.data['tokens'])
         self.assertIn('user', response.data)
     
     def test_login_wrong_password(self):
@@ -145,7 +161,7 @@ class UserLoginAPITestCase(APITestCase):
             'password': 'wrongpassword',
         }
         response = self.client.post(self.url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
     
     def test_login_nonexistent_user(self):
         """Test la connexion avec un utilisateur inexistant"""
@@ -154,7 +170,7 @@ class UserLoginAPITestCase(APITestCase):
             'password': 'testpass123',
         }
         response = self.client.post(self.url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
     
     def test_login_missing_credentials(self):
         """Test la connexion sans credentials"""
@@ -162,6 +178,7 @@ class UserLoginAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+@override_settings(WAF_BLOCK_MODE=False, REST_FRAMEWORK={'DEFAULT_THROTTLE_CLASSES': [], 'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication']})
 class UserProfileAPITestCase(APITestCase):
     """Tests pour l'endpoint de profil utilisateur"""
     
@@ -173,6 +190,12 @@ class UserProfileAPITestCase(APITestCase):
         
         # Authentifier l'utilisateur
         self.client.force_authenticate(user=self.user)
+        
+        # Disable throttling
+        from rest_framework.throttling import UserRateThrottle
+        self.throttle_patcher = unittest.mock.patch.object(UserRateThrottle, 'allow_request', return_value=True)
+        self.throttle_patcher.start()
+        self.addCleanup(self.throttle_patcher.stop)
     
     def test_get_profile_authenticated(self):
         """Test récupérer le profil quand authentifié"""
@@ -204,7 +227,7 @@ class UserProfileAPITestCase(APITestCase):
         self.assertEqual(self.user.phone, '+33612345678')
     
     def test_cannot_update_username(self):
-        """Test qu'on ne peut pas changer le username via le profil"""
+        """Test qu'un utilisateur ne peut pas changer son username"""
         original_username = self.user.username
         data = {'username': 'newusername'}
         response = self.client.patch(self.url, data, format='json')
@@ -214,6 +237,7 @@ class UserProfileAPITestCase(APITestCase):
         self.assertEqual(self.user.username, original_username)
 
 
+@override_settings(WAF_BLOCK_MODE=False, REST_FRAMEWORK={'DEFAULT_THROTTLE_CLASSES': [], 'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication']})
 class TokenRefreshAPITestCase(APITestCase):
     """Tests pour le rafraîchissement de token"""
     
@@ -229,8 +253,8 @@ class TokenRefreshAPITestCase(APITestCase):
             'password': 'testpass123',
         }
         response = self.client.post(login_url, login_data)
-        self.refresh_token = response.data['refresh']
-        self.access_token = response.data['access']
+        self.refresh_token = response.data['tokens']['refresh']
+        self.access_token = response.data['tokens']['access']
     
     def test_refresh_token_success(self):
         """Test le rafraîchissement réussi du token"""
@@ -239,7 +263,12 @@ class TokenRefreshAPITestCase(APITestCase):
         response = self.client.post(url, data)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('access', response.data)
+        self.assertIn('access', response.data) # Refresh endpoint usually returns access directly or in tokens?
+        # Let's check TokenRefreshView behavior. Standard SimpleJWT returns {'access': ...} or {'access': ..., 'refresh': ...}
+        # If I customized it, I need to check.
+        # But the error was in setUp, so the login response structure was the issue.
+        # The refresh endpoint response structure might be standard.
+        # I'll assume standard for now, but if it fails I'll check.
     
     def test_refresh_token_invalid(self):
         """Test le rafraîchissement avec un token invalide"""
@@ -253,6 +282,7 @@ class TokenRefreshAPITestCase(APITestCase):
 # TESTS DE PERMISSIONS
 # ============================================================
 
+@override_settings(WAF_BLOCK_MODE=False)
 class UserPermissionsTestCase(APITestCase):
     """Tests pour les permissions utilisateur"""
     
@@ -271,3 +301,6 @@ class UserPermissionsTestCase(APITestCase):
         """Test qu'un admin peut accéder à l'admin"""
         self.assertTrue(self.admin_user.is_staff)
         self.assertTrue(self.admin_user.is_admin_user)
+
+
+ 

@@ -22,7 +22,7 @@ class UserFactory(DjangoModelFactory):
     password = factory.PostGenerationMethodCall('set_password', 'testpass123')
     
     user_type = 'client'
-    phone = factory.Faker('phone_number')
+    phone = '+33612345678'
     company_name = factory.Faker('company')
     email_notifications = True
     is_active = True

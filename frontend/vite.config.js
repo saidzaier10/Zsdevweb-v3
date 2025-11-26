@@ -43,5 +43,9 @@ export default defineConfig({
     },
     // Source maps pour debug en prod (optionnel)
     sourcemap: false,
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
   }
 })
