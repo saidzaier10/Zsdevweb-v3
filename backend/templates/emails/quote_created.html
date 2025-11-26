@@ -1,40 +1,86 @@
-{% extends 'emails/base_email.html' %}
+<!DOCTYPE html>
+<html>
 
-{% block title %}Votre devis {{ quote.quote_number }} - ZsDevWeb{% endblock %}
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
 
-{% block content %}
-<h2>Bonjour {{ quote.client_name }},</h2>
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
 
-<p>Merci de votre confiance ! Votre devis a été créé avec succès.</p>
+        .header {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
 
-<div class="info-box">
-    <strong>📄 Numéro de devis :</strong> {{ quote.quote_number }}<br>
-    <strong>💼 Projet :</strong> {{ quote.project_type.name }}<br>
-    <strong>💰 Montant total :</strong> {{ quote.total_ttc }} € TTC<br>
-    <strong>⏰ Valide jusqu'au :</strong> {{ quote.expires_at|date:"d/m/Y" }}
-</div>
+        .content {
+            padding: 20px 0;
+        }
 
-<p>Vous pouvez consulter et signer votre devis en ligne en cliquant sur le bouton ci-dessous :</p>
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
 
-<center>
-    <a href="{{ signature_link }}" class="cta-button">
-        ✍️ Consulter et signer mon devis
-    </a>
-</center>
+        .footer {
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+    </style>
+</head>
 
-<div class="warning-box">
-    ⚠️ <strong>Important :</strong> Ce devis est valable 30 jours.
-    Passé ce délai, un nouveau devis devra être établi.
-</div>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Votre Devis est Prêt</h2>
+        </div>
+        <div class="content">
+            <p>Bonjour {{ quote.client_name }},</p>
 
-<p><strong>Votre projet en bref :</strong></p>
-<div class="info-box" style="border-left-color: #10b981;">
-    {{ quote.project_description|default:"Aucune description fournie" }}
-</div>
+            <p>Suite à votre demande, nous avons le plaisir de vous transmettre le devis <strong>{{ quote.quote_number
+                    }}</strong>.</p>
 
-<p>Si vous avez des questions ou souhaitez discuter de votre projet, n'hésitez pas à me contacter directement à <a href="mailto:said.zaier@gmail.com">said.zaier@gmail.com</a>.</p>
+            <p>Vous trouverez le détail de notre proposition en pièce jointe (PDF), incluant l'échéancier de paiement
+                (30% à la commande, 40% à mi-projet, 30% à la livraison).</p>
 
-<p>Cordialement,<br>
-<strong>Said Zaier</strong><br>
-ZsDevWeb</p>
-{% endblock %}
+            <p>Vous pouvez également consulter, accepter et signer ce devis directement en ligne via le lien sécurisé
+                ci-dessous :</p>
+
+            <div style="text-align: center;">
+                <a href="{{ signature_link }}" class="button">Consulter et Signer le Devis</a>
+            </div>
+
+            <p style="margin-top: 20px;">Ce devis est valable jusqu'au {{ quote.expires_at|date:"d/m/Y" }}.</p>
+
+            <p>N'hésitez pas à nous contacter si vous avez des questions.</p>
+
+            <p>Cordialement,<br>L'équipe ZsDevWeb</p>
+        </div>
+        <div class="footer">
+            <p>&copy; {{ current_year }} ZsDevWeb. Tous droits réservés.</p>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,43 +1,67 @@
-{% extends 'emails/base_email.html' %}
+<!DOCTYPE html>
+<html>
 
-{% block title %}Accusé de réception - Devis {{ quote.quote_number }}{% endblock %}
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
 
-{% block content %}
-<h2>Bonjour {{ quote.client_name }},</h2>
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
 
-<p>Nous avons bien pris note de votre décision concernant le devis <strong>{{ quote.quote_number }}</strong>.</p>
+        .header {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
 
-<div class="info-box" style="border-left-color: #ef4444;">
-    <strong>📄 Devis :</strong> {{ quote.quote_number }}<br>
-    <strong>💼 Projet :</strong> {{ quote.project_type.name }}<br>
-    <strong>❌ Statut :</strong> Refusé
-</div>
+        .content {
+            padding: 20px 0;
+        }
 
-{% if quote.rejection_reason %}
-<p><strong>Motif indiqué :</strong></p>
-<div class="info-box">
-    {{ quote.rejection_reason }}
-</div>
-{% endif %}
+        .footer {
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+    </style>
+</head>
 
-<p>Je comprends que ce projet ne se concrétise pas pour le moment. Cependant, je reste à votre disposition si vous souhaitez :</p>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Accusé de Réception</h2>
+        </div>
+        <div class="content">
+            <p>Bonjour {{ quote.client_name }},</p>
 
-<ul style="line-height: 2;">
-    <li>📞 Discuter d'une alternative ou d'ajustements</li>
-    <li>💬 Obtenir des conseils sur votre projet</li>
-    <li>🔄 Recevoir un nouveau devis adapté à vos besoins</li>
-</ul>
+            <p>Nous avons bien pris en compte votre refus concernant le devis <strong>{{ quote.quote_number }}</strong>.
+            </p>
 
-<center>
-    <a href="{{ frontend_url }}/contact" class="cta-button" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
-        💬 Me contacter
-    </a>
-</center>
+            <p>Nous regrettons que notre proposition n'ait pas retenu votre attention.</p>
 
-<p>N'hésitez pas à revenir vers moi pour vos futurs projets web !</p>
+            <p>Si vous souhaitez nous faire part de vos retours ou discuter d'une nouvelle proposition plus adaptée à
+                vos besoins, n'hésitez pas à nous contacter.</p>
 
-<p>Cordialement,<br>
-<strong>Said Zaier</strong><br>
-ZsDevWeb<br>
-<a href="mailto:said.zaier@gmail.com">said.zaier@gmail.com</a></p>
-{% endblock %}
+            <p>Cordialement,<br>L'équipe ZsDevWeb</p>
+        </div>
+        <div class="footer">
+            <p>&copy; {{ current_year }} ZsDevWeb. Tous droits réservés.</p>
+        </div>
+    </div>
+</body>
+
+</html>

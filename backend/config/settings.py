@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'portfolio',
     'quotes',
     'users',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -124,7 +125,7 @@ DATABASES = {
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': os.getenv('REDIS_URL', 'redis://redis:6379/1'),
+        'LOCATION': os.getenv('REDIS_URL', f"redis://:{os.getenv('REDIS_PASSWORD', '')}@{os.getenv('REDIS_HOST', 'redis')}:{os.getenv('REDIS_PORT', '6379')}/1" if os.getenv('REDIS_PASSWORD') else f"redis://{os.getenv('REDIS_HOST', 'redis')}:{os.getenv('REDIS_PORT', '6379')}/1"),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
             'SOCKET_CONNECT_TIMEOUT': 5,
@@ -209,6 +210,7 @@ AUTH_USER_MODEL = 'users.User'
 # ==============================================================================
 
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
     'DEFAULT_FILTER_BACKENDS': [
@@ -237,6 +239,14 @@ REST_FRAMEWORK = {
         'user': '1000/hour',
     },
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'ZSDEVWEB API',
+    'DESCRIPTION': 'API documentation for ZSDEVWEB v3 Portfolio & Quote Management System',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
 }
 
 

@@ -147,8 +147,10 @@ const {
   downloading,
   loadData,
   sendQuote,
+  sendQuote,
   downloadPDF,
-  saveQuote: saveQuoteAPI
+  saveQuote: saveQuoteAPI,
+  bulkDeleteQuotes
 } = useQuoteAdmin()
 
 const {
@@ -272,9 +274,15 @@ const handleBulkExportPDF = () => {
 }
 
 const handleBulkDelete = async () => {
-  // TODO: Implement bulk delete if needed
-  console.log('Bulk delete not implemented yet')
+  if (!confirm('Êtes-vous sûr de vouloir supprimer ces devis ? Cette action est irréversible.')) {
+    return
+  }
+
+  bulkProcessing.value = true
+  await bulkDeleteQuotes(selectedQuotes.value)
+  bulkProcessing.value = false
   showBulkModal.value = false
+  clearSelection()
 }
 
 // Load data on mount

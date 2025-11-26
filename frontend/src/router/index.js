@@ -102,4 +102,41 @@ router.beforeEach((to, from, next) => {
   }
 })
 
+// SEO Guard
+import { useSEO } from '../composables/useSEO'
+
+router.afterEach((to) => {
+  const defaultTitle = 'Solutions Web & Mobile'
+  const defaultDesc = 'Zsdevweb - Solutions web innovantes, développement sur mesure, applications mobiles et design UI/UX.'
+
+  let title = defaultTitle
+  let description = defaultDesc
+
+  switch (to.name) {
+    case 'Home':
+      title = 'Accueil'
+      break
+    case 'Portfolio':
+      title = 'Portfolio'
+      description = 'Découvrez nos réalisations : sites web, applications mobiles et designs uniques.'
+      break
+    case 'Devis':
+      title = 'Demander un Devis'
+      description = 'Obtenez une estimation gratuite pour votre projet web ou mobile en quelques clics.'
+      break
+    case 'Contact':
+      title = 'Contact'
+      description = 'Contactez-nous pour discuter de votre projet digital.'
+      break
+    case 'Login':
+      title = 'Connexion'
+      break
+    case 'Register':
+      title = 'Inscription'
+      break
+  }
+
+  useSEO(title, description)
+})
+
 export default router

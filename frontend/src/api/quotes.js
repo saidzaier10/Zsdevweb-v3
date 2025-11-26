@@ -95,3 +95,8 @@ export const patchQuote = (id, partialData) => {
 export const getStatistics = () => {
   return apiClient.get('/api/quotes/quotes/statistics/')
 }
+
+// Supprimer plusieurs devis (admin uniquement)
+export const bulkDeleteQuotes = (ids) => {
+  return apiClient.post('/api/quotes/quotes/bulk-delete/', { ids })
+}

@@ -3,71 +3,26 @@
     <div class="container mx-auto px-4 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
-        <router-link to="/" class="flex items-center space-x-2 group">
-          <div class="w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-500 rounded-lg flex items-center justify-center transform group-hover:rotate-6 transition-transform duration-300">
+        <router-link to="/" class="flex items-center space-x-2 group relative">
+          <div class="absolute -inset-2 bg-gradient-to-r from-primary-600 to-secondary-500 rounded-lg opacity-0 group-hover:opacity-20 blur transition-opacity duration-300"></div>
+          <div class="relative w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-500 rounded-lg flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-300 shadow-lg">
             <span class="text-white font-bold text-xl">Zs</span>
           </div>
-          <span class="text-2xl font-display font-bold gradient-text hidden sm:block">
+          <span class="text-2xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-r from-dark-900 to-dark-700 dark:from-white dark:to-gray-300 hidden sm:block">
             Zsdevweb
           </span>
         </router-link>
         
         <!-- Navigation Desktop -->
         <ul class="hidden md:flex items-center space-x-1">
-          <li>
+          <li v-for="link in navLinks" :key="link.path">
             <router-link 
-              to="/" 
-              class="px-4 py-2 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all duration-200"
-              active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
+              :to="link.path" 
+              class="relative px-4 py-2 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200 group"
+              active-class="text-primary-600 dark:text-primary-400"
             >
-              Accueil
-            </router-link>
-          </li>
-          <li>
-            <router-link 
-              to="/portfolio" 
-              class="px-4 py-2 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all duration-200"
-              active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
-            >
-              Portfolio
-            </router-link>
-          </li>
-          <li>
-            <router-link
-              to="/devis"
-              class="px-4 py-2 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all duration-200"
-              active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
-            >
-              Devis
-            </router-link>
-          </li>
-          <!-- Mes Devis (uniquement si connecté et non admin) -->
-          <li v-if="authStore.isAuthenticated && !authStore.user?.is_staff">
-            <router-link
-              to="/mes-devis"
-              class="px-4 py-2 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all duration-200"
-              active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
-            >
-              Mes Devis
-            </router-link>
-          </li>
-          <!-- Admin (uniquement si admin) -->
-          <li v-if="authStore.user?.is_staff">
-            <router-link
-              to="/admin/devis"
-              class="px-4 py-2 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all duration-200"
-              active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
-            >
-              Admin
-            </router-link>
-          </li>
-          <li>
-            <router-link
-              to="/contact"
-              class="px-4 py-2 rounded-lg font-medium text-dark-700 dark:text-dark-200 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-dark-700 transition-all duration-200"
-              active-class="text-primary-600 bg-primary-50 dark:bg-dark-700"
-            >
-              Contact
+              <span class="relative z-10">{{ link.name }}</span>
+              <span class="absolute inset-0 bg-primary-50 dark:bg-primary-900/20 rounded-lg scale-90 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-200 ease-out"></span>
             </router-link>
           </li>
         </ul>
@@ -258,7 +213,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useThemeStore } from '../stores/theme'
@@ -267,6 +222,26 @@ const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const mobileMenuOpen = ref(false)
+
+const navLinks = computed(() => {
+  const links = [
+    { name: 'Accueil', path: '/' },
+    { name: 'Portfolio', path: '/portfolio' },
+    { name: 'Devis', path: '/devis' }
+  ]
+
+  if (authStore.isAuthenticated && !authStore.user?.is_staff) {
+    links.push({ name: 'Mes Devis', path: '/mes-devis' })
+  }
+
+  if (authStore.user?.is_staff) {
+    links.push({ name: 'Admin', path: '/admin/devis' })
+  }
+
+  links.push({ name: 'Contact', path: '/contact' })
+
+  return links
+})
 
 const handleLogout = async () => {
   await authStore.logout()

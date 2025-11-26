@@ -85,9 +85,11 @@ class ContactMessageSerializer(serializers.ModelSerializer):
 
     def validate_email(self, value):
         """Valider le format de l'email"""
-        import re
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        if not re.match(email_regex, value):
+        from django.core.validators import validate_email
+        from django.core.exceptions import ValidationError
+        try:
+            validate_email(value)
+        except ValidationError:
             raise serializers.ValidationError("Format d'email invalide")
         return value.lower()
 

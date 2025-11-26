@@ -1,39 +1,66 @@
-{% extends 'emails/base_email.html' %}
+<!DOCTYPE html>
+<html>
 
-{% block title %}Confirmation de réception - ZsDevWeb{% endblock %}
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
 
-{% block content %}
-<h2>Bonjour {{ message.name }},</h2>
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
 
-<p>Merci de nous avoir contactés ! Nous avons bien reçu votre message.</p>
+        .header {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
 
-<div class="info-box">
-    <strong>📧 Sujet de votre message :</strong> {{ message.subject }}<br>
-    <strong>📅 Reçu le :</strong> {{ message.created_at|date:"d/m/Y à H:i" }}
-</div>
+        .content {
+            padding: 20px 0;
+        }
 
-<p><strong>Votre message :</strong></p>
-<div class="info-box" style="border-left-color: #10b981; background-color: #f0fdf4;">
-    {{ message.message|linebreaksbr }}
-</div>
+        .footer {
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+    </style>
+</head>
 
-<div class="info-box" style="background-color: #eff6ff; border-left-color: #3b82f6;">
-    ⏱️ <strong>Délai de réponse :</strong> Nous nous engageons à vous répondre sous 24 à 48 heures ouvrées.
-</div>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Confirmation de réception</h2>
+        </div>
+        <div class="content">
+            <p>Bonjour <strong>{{ message.name }}</strong>,</p>
 
-<p>En attendant, n'hésitez pas à :</p>
-<ul style="margin-left: 20px;">
-    <li>Consulter notre <a href="{{ frontend_url }}/portfolio" style="color: #6366f1;">portfolio de projets</a></li>
-    <li>Découvrir nos <a href="{{ frontend_url }}/#services" style="color: #6366f1;">services</a></li>
-    <li>Demander un <a href="{{ frontend_url }}/devis" style="color: #6366f1;">devis gratuit</a></li>
-</ul>
+            <p>Nous avons bien reçu votre message concernant : <em>"{{ message.subject }}"</em>.</p>
 
-<p>Cordialement,<br>
-<strong>Said Zaier</strong><br>
-ZsDevWeb<br>
-<a href="mailto:said.zaier@gmail.com">said.zaier@gmail.com</a></p>
+            <p>Notre équipe va traiter votre demande dans les plus brefs délais (généralement sous 24 à 48 heures).</p>
 
-<div class="warning-box" style="margin-top: 20px;">
-    ℹ️ Ceci est un email automatique. Merci de ne pas y répondre directement.
-</div>
-{% endblock %}
+            <p>En attendant, n'hésitez pas à consulter notre <a href="{{ frontend_url }}/portfolio">portfolio</a> pour
+                voir nos dernières réalisations.</p>
+
+            <p>Cordialement,<br>L'équipe ZsDevWeb</p>
+        </div>
+        <div class="footer">
+            <p>&copy; {{ now|date:"Y" }} ZsDevWeb. Tous droits réservés.</p>
+        </div>
+    </div>
+</body>
+
+</html>

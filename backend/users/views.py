@@ -26,6 +26,7 @@ class RegisterView(generics.CreateAPIView):
     """Inscription d'un nouvel utilisateur"""
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
+    authentication_classes = []
     throttle_classes = [RegisterRateThrottle]
 
     def create(self, request, *args, **kwargs):
@@ -61,6 +62,7 @@ class RegisterView(generics.CreateAPIView):
 class LoginView(APIView):
     """Connexion utilisateur"""
     permission_classes = [AllowAny]
+    authentication_classes = []
     throttle_classes = [LoginRateThrottle]
 
     def post(self, request):

@@ -397,6 +397,20 @@ class QuoteViewSet(viewsets.ModelViewSet):
         serializer = QuoteDetailSerializer(new_quote, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @action(detail=False, methods=['post'], url_path='bulk-delete', permission_classes=[permissions.IsAdminUser])
+    def bulk_delete(self, request):
+        """Supprimer plusieurs devis"""
+        quote_ids = request.data.get('ids', [])
+        if not quote_ids:
+            return Response({'error': 'Aucun ID fourni'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Filtrer les devis qui existent
+        quotes = Quote.objects.filter(id__in=quote_ids)
+        count = quotes.count()
+        quotes.delete()
+        
+        return Response({'message': f'{count} devis supprimés avec succès'})
+
 
 class QuoteEmailLogViewSet(viewsets.ReadOnlyModelViewSet):
     """API pour consulter les logs d'emails"""

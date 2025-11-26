@@ -48,6 +48,8 @@ dist/
 # Markdown: ignore all .md files except README.md
 *.md
 !README.md
+!DOSSIER_RNCP_5_ZSDEVWEB_V2.md
+!QUICKSTART.md
 
 # Environment
 .env

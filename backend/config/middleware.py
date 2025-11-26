@@ -46,35 +46,52 @@ class SecurityMiddleware:
     # Taille maximale des requêtes (10 MB)
     MAX_REQUEST_SIZE = 10 * 1024 * 1024
 
+    # Whitelisted paths (skip WAF checks)
+    WHITELISTED_PATHS = [
+        '/admin/',
+        '/static/',
+        '/media/',
+    ]
+
     def __init__(self, get_response):
         self.get_response = get_response
+        # Mode "Observation" : si True, on loggue mais on ne bloque pas
+        self.block_mode = settings.WAF_BLOCK_MODE if hasattr(settings, 'WAF_BLOCK_MODE') else True
 
     def __call__(self, request):
         # Vérifications avant le traitement de la requête
         
+        # 0. Ignorer les chemins whitelistés
+        for path in self.WHITELISTED_PATHS:
+            if request.path.startswith(path):
+                return self.get_response(request)
+
         # 1. Vérifier la taille de la requête
         if self.is_request_too_large(request):
             logger.warning(f"Requête trop volumineuse détectée depuis {self.get_client_ip(request)}")
-            return JsonResponse(
-                {'error': 'Requête trop volumineuse'},
-                status=413
-            )
+            if self.block_mode:
+                return JsonResponse(
+                    {'error': 'Requête trop volumineuse'},
+                    status=413
+                )
         
         # 2. Vérifier le User-Agent (uniquement en production)
         if not settings.DEBUG and self.is_suspicious_user_agent(request):
             logger.warning(f"User-Agent suspect détecté: {request.META.get('HTTP_USER_AGENT')} depuis {self.get_client_ip(request)}")
-            return JsonResponse(
-                {'error': 'Accès refusé'},
-                status=403
-            )
+            if self.block_mode:
+                return JsonResponse(
+                    {'error': 'Accès refusé'},
+                    status=403
+                )
         
         # 3. Détecter les tentatives d'injection SQL/XSS dans l'URL
         if self.contains_malicious_patterns(request.path) or self.contains_malicious_patterns(request.GET.urlencode()):
             logger.error(f"Tentative d'attaque détectée dans l'URL: {request.path} depuis {self.get_client_ip(request)}")
-            return JsonResponse(
-                {'error': 'Requête invalide'},
-                status=400
-            )
+            if self.block_mode:
+                return JsonResponse(
+                    {'error': 'Requête invalide'},
+                    status=400
+                )
         
         # 4. Vérifier le body pour les attaques (seulement pour POST/PUT/PATCH)
         if request.method in ['POST', 'PUT', 'PATCH']:
@@ -83,10 +100,11 @@ class SecurityMiddleware:
                     body_str = request.body.decode('utf-8', errors='ignore')
                     if self.contains_malicious_patterns(body_str):
                         logger.error(f"Tentative d'attaque détectée dans le body depuis {self.get_client_ip(request)}")
-                        return JsonResponse(
-                            {'error': 'Contenu de la requête invalide'},
-                            status=400
-                        )
+                        if self.block_mode:
+                            return JsonResponse(
+                                {'error': 'Contenu de la requête invalide'},
+                                status=400
+                            )
                 except Exception as e:
                     logger.debug(f"Impossible de décoder le body: {str(e)}")
         

@@ -14,50 +14,15 @@
     <section class="py-8 bg-gray-50 dark:bg-dark-800 sticky top-16 z-40 border-b border-gray-200 dark:border-dark-700">
       <div class="container mx-auto px-4">
         <div class="flex flex-wrap gap-3 justify-center">
-          <button
-            @click="selectedFilter = 'all'"
-            :class="[
-              'px-6 py-2 rounded-lg font-semibold transition-all duration-200',
-              selectedFilter === 'all' 
-                ? 'bg-primary-600 text-white shadow-lg' 
-                : 'bg-white dark:bg-dark-700 text-dark-700 dark:text-dark-200 hover:bg-primary-50 dark:hover:bg-dark-600 border border-gray-200 dark:border-dark-600'
-            ]"
+          <ModernButton
+            v-for="filter in ['all', 'web', 'ecommerce', 'mobile']"
+            :key="filter"
+            :variant="selectedFilter === filter ? 'primary' : 'outline'"
+            size="sm"
+            @click="selectedFilter = filter"
           >
-            Tous les projets
-          </button>
-          <button
-            @click="selectedFilter = 'web'"
-            :class="[
-              'px-6 py-2 rounded-lg font-semibold transition-all duration-200',
-              selectedFilter === 'web' 
-                ? 'bg-primary-600 text-white shadow-lg' 
-                : 'bg-white dark:bg-dark-700 text-dark-700 dark:text-dark-200 hover:bg-primary-50 dark:hover:bg-dark-600 border border-gray-200 dark:border-dark-600'
-            ]"
-          >
-            Sites Web
-          </button>
-          <button
-            @click="selectedFilter = 'ecommerce'"
-            :class="[
-              'px-6 py-2 rounded-lg font-semibold transition-all duration-200',
-              selectedFilter === 'ecommerce' 
-                ? 'bg-primary-600 text-white shadow-lg' 
-                : 'bg-white dark:bg-dark-700 text-dark-700 dark:text-dark-200 hover:bg-primary-50 dark:hover:bg-dark-600 border border-gray-200 dark:border-dark-600'
-            ]"
-          >
-            E-commerce
-          </button>
-          <button
-            @click="selectedFilter = 'mobile'"
-            :class="[
-              'px-6 py-2 rounded-lg font-semibold transition-all duration-200',
-              selectedFilter === 'mobile' 
-                ? 'bg-primary-600 text-white shadow-lg' 
-                : 'bg-white dark:bg-dark-700 text-dark-700 dark:text-dark-200 hover:bg-primary-50 dark:hover:bg-dark-600 border border-gray-200 dark:border-dark-600'
-            ]"
-          >
-            Applications
-          </button>
+            {{ getFilterLabel(filter) }}
+          </ModernButton>
         </div>
       </div>
     </section>
@@ -74,62 +39,74 @@
           <p class="text-xl text-dark-600 dark:text-dark-300">Aucun projet disponible dans cette catégorie.</p>
         </div>
 
-        <div v-else class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <div
-            v-for="project in filteredProjects"
-            :key="project.id"
-            class="group bg-white dark:bg-dark-800 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-200 dark:border-dark-700"
-          >
-            <div class="relative h-64 overflow-hidden bg-gray-200 dark:bg-dark-700">
-              <img
-                v-if="project.image"
-                :src="project.image"
-                :alt="project.title"
-                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div v-else class="w-full h-full flex items-center justify-center">
-                <svg class="w-20 h-20 text-gray-400 dark:text-dark-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-              </div>
-              <div class="absolute top-4 right-4">
-                <span class="bg-primary-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                  {{ getCategoryLabel(project.category) }}
-                </span>
-              </div>
-            </div>
-            
-            <div class="p-6">
-              <h3 class="text-2xl font-bold text-dark-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-                {{ project.title }}
-              </h3>
-              <p class="text-dark-600 dark:text-dark-300 mb-4 line-clamp-2">
-                {{ project.description }}
-              </p>
-              
-              <div class="flex flex-wrap gap-2 mb-4">
-                <span
-                  v-for="tech in project.technologies?.slice(0, 3)"
-                  :key="tech.id || tech.name || tech"
-                  class="px-3 py-1 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-xs font-medium"
-                >
-                  {{ tech.name || tech }}
-                </span>
-              </div>
+        <div v-else>
+          <BentoGrid>
+            <BentoItem
+              v-for="(project, index) in filteredProjects"
+              :key="project.id"
+              :col-span="index === 0 || index % 4 === 0 ? 2 : 1"
+              :row-span="index === 0 ? 2 : 1"
+            >
+              <div class="relative h-full flex flex-col">
+                <!-- Image Container -->
+                <div class="relative flex-grow overflow-hidden bg-gray-200 dark:bg-dark-700 h-48 sm:h-auto">
+                  <img
+                    v-if="project.image"
+                    :src="project.image"
+                    :alt="project.title"
+                    class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                  <div v-else class="w-full h-full flex items-center justify-center">
+                    <svg class="w-20 h-20 text-gray-400 dark:text-dark-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                  </div>
+                  
+                  <!-- Overlay Gradient -->
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
+                  
+                  <!-- Category Badge -->
+                  <div class="absolute top-4 right-4">
+                    <span class="bg-white/20 backdrop-blur-md border border-white/30 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                      {{ getCategoryLabel(project.category) }}
+                    </span>
+                  </div>
+                </div>
+                
+                <!-- Content -->
+                <div class="absolute bottom-0 left-0 right-0 p-6 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                  <h3 class="text-2xl font-bold mb-2 text-shadow-lg">
+                    {{ project.title }}
+                  </h3>
+                  <p class="text-gray-200 mb-4 line-clamp-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                    {{ project.description }}
+                  </p>
+                  
+                  <div class="flex flex-wrap gap-2 mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-150">
+                    <span
+                      v-for="tech in project.technologies?.slice(0, 3)"
+                      :key="tech.id || tech.name || tech"
+                      class="px-2 py-1 bg-white/20 backdrop-blur-sm rounded text-xs"
+                    >
+                      {{ tech.name || tech }}
+                    </span>
+                  </div>
 
-              <a
-                v-if="project.url"
-                :href="project.url"
-                target="_blank"
-                class="inline-flex items-center text-primary-600 dark:text-primary-400 font-semibold hover:underline"
-              >
-                Voir le projet
-                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                </svg>
-              </a>
-            </div>
-          </div>
+                  <a
+                    v-if="project.url"
+                    :href="project.url"
+                    target="_blank"
+                    class="inline-flex items-center text-white font-semibold hover:text-primary-300 transition-colors opacity-0 group-hover:opacity-100 duration-300 delay-200"
+                  >
+                    Voir le projet
+                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </BentoItem>
+          </BentoGrid>
         </div>
       </div>
     </section>
@@ -212,6 +189,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getProjects, getTestimonials } from '../api/portfolio'
+import ModernButton from '../components/ui/ModernButton.vue'
+import BentoGrid from '../components/ui/BentoGrid.vue'
+import BentoItem from '../components/ui/BentoItem.vue'
 
 const selectedFilter = ref('all')
 const projects = ref([])
@@ -234,6 +214,16 @@ const getCategoryLabel = (category) => {
     'other': 'Autre'
   }
   return labels[category] || category
+}
+
+const getFilterLabel = (filter) => {
+  const labels = {
+    'all': 'Tous les projets',
+    'web': 'Sites Web',
+    'ecommerce': 'E-commerce',
+    'mobile': 'Applications'
+  }
+  return labels[filter] || filter
 }
 
 onMounted(async () => {

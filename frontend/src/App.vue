@@ -1,26 +1,26 @@
 <template>
-  <div class="min-h-screen bg-white dark:bg-dark-900 transition-colors duration-200">
-    <Navbar />
+  <div
+    class="min-h-screen bg-gradient-to-br from-primary-600 via-primary-700 to-secondary-600 dark:from-primary-900 dark:via-primary-800 dark:to-secondary-900 text-white transition-colors duration-200 relative">
+    <!-- Global Animated Background -->
 
-    <!-- Router view with page transitions -->
-    <router-view v-slot="{ Component, route }">
-      <transition name="page" mode="out-in">
-        <component :is="Component" :key="route.path" />
-      </transition>
-    </router-view>
 
-    <Footer />
+    <div class="relative flex flex-col min-h-screen">
+      <Navbar />
+
+      <!-- Router view with page transitions -->
+      <router-view v-slot="{ Component, route }">
+        <transition name="page" mode="out-in">
+          <component :is="Component" :key="route.path" />
+        </transition>
+      </router-view>
+
+      <Footer />
+    </div>
 
     <!-- Toast Container -->
     <div class="fixed top-4 right-4 z-50 space-y-3">
-      <Toast
-        v-for="toast in toasts"
-        :key="toast.id"
-        :type="toast.type"
-        :title="toast.title"
-        :message="toast.message"
-        @close="removeToast(toast.id)"
-      />
+      <Toast v-for="toast in toasts" :key="toast.id" :type="toast.type" :title="toast.title" :message="toast.message"
+        @close="removeToast(toast.id)" />
     </div>
   </div>
 </template>
@@ -42,9 +42,16 @@ const removeToast = (id) => {
   toastStore.removeToast(id)
 }
 
+import { isLowEndDevice } from './utils/performance'
+
 onMounted(() => {
   // Initialisation du thème au montage de l'application
   themeStore.initTheme()
+
+  // Disable heavy animations on low-end devices
+  if (isLowEndDevice()) {
+    document.body.classList.add('reduce-motion')
+  }
 })
 </script>
 

@@ -4,7 +4,7 @@
  */
 
 import { ref } from 'vue'
-import { getAllQuotes, sendQuote as sendQuoteAPI, getStatistics, downloadQuotePDF, patchQuote } from '@/api/quotes'
+import { getAllQuotes, sendQuote as sendQuoteAPI, getStatistics, downloadQuotePDF, patchQuote, bulkDeleteQuotes as bulkDeleteQuotesAPI } from '@/api/quotes'
 import { useApi } from '@/composables/useApi'
 import { SUCCESS_MESSAGES } from '@/utils/constants'
 
@@ -161,6 +161,25 @@ export function useQuoteAdmin() {
     return { successCount, errorCount }
   }
 
+  /**
+   * Supprime plusieurs devis en masse
+   */
+  const bulkDeleteQuotes = async (quoteIds) => {
+    try {
+      await callApi(
+        () => bulkDeleteQuotesAPI(quoteIds),
+        {
+          successMessage: 'Devis supprimés avec succès',
+          errorMessage: 'Erreur lors de la suppression des devis'
+        }
+      )
+      await loadData()
+      return true
+    } catch (error) {
+      return false
+    }
+  }
+
   return {
     // States
     quotes,
@@ -177,6 +196,7 @@ export function useQuoteAdmin() {
     sendQuote,
     downloadPDF,
     saveQuote,
-    bulkSendQuotes
+    bulkSendQuotes,
+    bulkDeleteQuotes
   }
 }

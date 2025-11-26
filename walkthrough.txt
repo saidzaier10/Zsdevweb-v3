@@ -1,0 +1,35 @@
+# Walkthrough - Frontend Visual Updates & Optimizations
+
+## Overview
+This document summarizes the visual enhancements and performance optimizations made to the frontend application.
+
+## 1. Global Animated Background
+**File**: `frontend/src/App.vue`
+- Added the `InteractiveBackground` component to the root `App.vue`.
+- **Visibility**: Increased opacity to `0.7` and removed opaque backgrounds from `Home.vue` to ensure the animation is clearly visible across the site.
+- **Enhancements**:
+    - **Colors**: Updated palette with vibrant tech colors (Blue, Teal, Violet, Rose, Cyan, Indigo).
+    - **Particles**: Increased particle size for better visibility.
+
+## 2. Performance Optimizations
+**File**: `frontend/src/components/ui/InteractiveBackground.vue`
+- **FPS Limit**: Capped animation at **30 FPS** to reduce CPU/GPU usage significantly.
+- **Smart Pause**: Implemented the Page Visibility API to **pause the animation** completely when the tab is not active (saving battery).
+- **Device Adaptation**: Automatically reduces particle count by 50% on mobile devices and low-end hardware.
+
+## 3. Hero Section Video
+**File**: `frontend/src/views/Home.vue`
+- Replaced the static/interactive background in the Hero section with a `<video>` element.
+- **Video Source**: Used a placeholder video (abstract blue lines) from Mixkit.
+- **Configuration**: `autoplay`, `muted`, `loop`, `playsinline`.
+- **Cleanup**: Removed manual DOM manipulation scripts.
+
+## Verification
+- **Visuals**: Check the homepage and other pages. The background should be vibrant and visible.
+- **Performance**:
+    - Open Task Manager: CPU usage should be low.
+    - Switch tabs: Animation should pause (no resource usage).
+    - Mobile: Particle count should be lower.
+
+## Next Steps
+- **Replace Placeholder**: Replace the remote video URL in `Home.vue` with your own `hero-background.mp4` file in `frontend/public/videos/` when available.

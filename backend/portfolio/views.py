@@ -12,6 +12,7 @@ from .serializers import (
     TechnologySerializer, ProjectListSerializer, ProjectDetailSerializer,
     TestimonialSerializer, ContactMessageSerializer
 )
+from .services import get_portfolio_statistics
 
 
 @method_decorator(cache_page(60 * 15), name='dispatch')  # Cache 15 minutes
@@ -66,41 +67,8 @@ def statistics(request):
         - satisfaction_rate: Taux de satisfaction moyen (basé sur les ratings des témoignages)
         - years_experience: Années d'expérience
     """
-    # Compter les projets publiés
-    total_projects = Project.objects.filter(is_published=True).count()
-
-    # Compter les clients uniques (témoignages avec clients différents)
-    unique_clients = Testimonial.objects.filter(is_published=True).values('client_name').distinct().count()
-
-    # Calculer le taux de satisfaction moyen (basé sur les ratings /5)
-    avg_rating = Testimonial.objects.filter(is_published=True).aggregate(
-        avg=Avg('rating')
-    )['avg'] or 0
-
-    # Convertir la note moyenne sur 5 en pourcentage
-    satisfaction_rate = round((avg_rating / 5.0) * 100, 1) if avg_rating > 0 else 100
-
-    # Années d'expérience (peut être configuré ou calculé depuis la date du premier projet)
-    years_experience = 5  # Valeur par défaut
-
-    # Si on a des projets avec dates de complétion, calculer depuis le plus ancien
-    from django.utils import timezone
-    oldest_project = Project.objects.filter(
-        is_published=True,
-        completion_date__isnull=False
-    ).order_by('completion_date').first()
-
-    if oldest_project and oldest_project.completion_date:
-        years_diff = (timezone.now().date() - oldest_project.completion_date).days / 365.25
-        if years_diff > 0:
-            years_experience = max(int(years_diff), 1)
-
-    return Response({
-        'total_projects': total_projects,
-        'total_clients': unique_clients,
-        'satisfaction_rate': satisfaction_rate,
-        'years_experience': years_experience,
-    })
+    stats = get_portfolio_statistics()
+    return Response(stats)
 
 
 class ContactMessageViewSet(viewsets.ModelViewSet):

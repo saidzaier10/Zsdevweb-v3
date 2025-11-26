@@ -1,39 +1,70 @@
-{% extends 'emails/base_email.html' %}
+<!DOCTYPE html>
+<html>
 
-{% block title %}Confirmation de signature - Devis {{ quote.quote_number }}{% endblock %}
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
 
-{% block content %}
-<h2>🎉 Merci {{ quote.client_name }} !</h2>
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
 
-<p>Votre signature a bien été enregistrée pour le devis <strong>{{ quote.quote_number }}</strong>.</p>
+        .header {
+            background-color: #d4edda;
+            padding: 10px;
+            border-bottom: 1px solid #c3e6cb;
+            text-align: center;
+            color: #155724;
+        }
 
-<div class="info-box" style="border-left-color: #10b981;">
-    <strong>✅ Devis accepté le :</strong> {{ quote.signed_at|date:"d/m/Y à H:i" }}<br>
-    <strong>✍️ Signé par :</strong> {{ quote.signer_name }}<br>
-    <strong>💰 Montant total :</strong> {{ quote.total_ttc }} € TTC<br>
-    <strong>📅 Date de début estimée :</strong> {{ quote.estimated_start_date|date:"d/m/Y"|default:"À définir" }}
-</div>
+        .content {
+            padding: 20px 0;
+        }
 
-<p><strong>Prochaines étapes :</strong></p>
-<ol style="line-height: 2;">
-    <li>Vous recevrez une facture d'acompte de {{ quote.payment_first }} € (30%)</li>
-    <li>Le développement démarrera dès réception de l'acompte</li>
-    <li>Vous serez tenu informé de l'avancement du projet</li>
-</ol>
+        .footer {
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+    </style>
+</head>
 
-<div class="warning-box" style="background-color: #dbeafe; border-left-color: #3b82f6; color: #1e40af;">
-    💡 <strong>Astuce :</strong> Vous pouvez suivre l'avancement de votre projet depuis votre espace client.
-</div>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Devis Signé avec Succès !</h2>
+        </div>
+        <div class="content">
+            <p>Bonjour {{ quote.client_name }},</p>
 
-<p>Je vous remercie pour votre confiance et suis impatient de commencer notre collaboration !</p>
+            <p>Nous vous confirmons la bonne réception de votre signature pour le devis <strong>{{ quote.quote_number
+                    }}</strong>.</p>
 
-<center>
-    <a href="{{ frontend_url }}/devis/{{ quote.id }}" class="cta-button">
-        📊 Voir mon devis
-    </a>
-</center>
+            <p>Nous sommes ravis de collaborer avec vous sur ce projet !</p>
 
-<p>À très bientôt,<br>
-<strong>Said Zaier</strong><br>
-ZsDevWeb</p>
-{% endblock %}
+            <p>Nous allons revenir vers vous très prochainement pour organiser le démarrage de la prestation.</p>
+
+            <p>Vous pouvez consulter votre devis signé à tout moment via ce lien : <a href="{{ signature_link }}">Voir
+                    mon devis</a></p>
+
+            <p>Cordialement,<br>L'équipe ZsDevWeb</p>
+        </div>
+        <div class="footer">
+            <p>&copy; {{ current_year }} ZsDevWeb. Tous droits réservés.</p>
+        </div>
+    </div>
+</body>
+
+</html>
