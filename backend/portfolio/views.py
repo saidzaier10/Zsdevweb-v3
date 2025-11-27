@@ -38,6 +38,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     search_fields = ['title', 'description']
     ordering_fields = ['order', 'completion_date', 'created_at']
     ordering = ['order', '-completion_date']
+    lookup_field = 'slug'
 
     def get_serializer_class(self):
         if self.action == 'list':
